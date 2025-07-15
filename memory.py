@@ -69,4 +69,4 @@ def check_convo(db: Session, conversation_id: int, user_id: str) -> Conversation
         select(Conversation).where(Conversation.id == conversation_id).where(Conversation.user_id == user_id)).first()
     if convo is None:
         return None
-    return convo
+    return [ {"conversation" :convo, "messages": convo.messages} ]

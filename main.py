@@ -8,6 +8,7 @@ from db import engine, get_session
 from pydantic import BaseModel
 from schemas import ChatRequest, ChatResponse, NewConversationRequest, GenericReturn
 from fastapi.middleware.cors import CORSMiddleware
+import tiktoken
 
 import os
 from openai import OpenAI
@@ -73,42 +74,64 @@ def new_chat(request: NewConversationRequest, session: Session = Depends(get_ses
 
 @app.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest, session: Session = Depends(get_session)):
-    # Load/create conversation
-    # conversation = get_or_create_conversation(session, request.user_id, request.id)
-    # print(conversation)
-    # convo = conversation[0]["conversation"]
-    # messages = conversation[0]["messages"]
-    
+
+
+    ## Check if conversation exists
+    ## If exists, good we will use it
     convo = check_convo(session, request.convo_id, request.user_id)
-    # Save user's message
-    # add_message(session, request.convo_id, "user", request.message)
-    print(convo)
     if not convo:
-        return ChatResponse(response="Unable to find conversation.")
+        return ChatResponse(response="Unable to find conversation.", cono_id=request.convo_id, user_id=request.user_id)
     
-    summary = convo.summary
-    if summary is None:
-        system_message = {"role": "system", "content": "You are an expert assistant. You MUST return a summary of the chat history in a field called summary. Within your response you MUST return a JSON object of `{`summary: <summary of chat history>, text: <your response text>`}`. You MUST return a valid JSON string"}
-        # history.append(system_message)
-        summary = [system_message]
-    print(summary)
-    return ChatResponse(response="Message saved successfully.")
+    # Get conversation messages
+    messages = convo[0]["messages"]
+
+    ## Initialize chat messages inputs
+    message_inputs = []
+
+    ### check if messages is empty list ###
+    if messages == []: # if empty, start new message chain with system message
+        system_message = {"role": "system", "content": "You are an expert AI assistant."}
+        message_inputs.append(system_message)
+        add_message(session, convo[0]["conversation"].id, system_message["role"], system_message["content"])
+    else: # Use existing messages
+        message_inputs = messages.copy()
+
+    # Add user message to the conversation 
+    user_message = {"role": "user", "content": request.message.strip()}
+    message_inputs.append(user_message)
+
+    # Add user message to the database
+    add_message(session, convo[0]["conversation"].id, user_message["role"], user_message["content"])
+
+
+    # To get the tokeniser corresponding to a specific model in the OpenAI API:
+    # enc = tiktoken.encoding_for_model("gpt-4o")
+    total_tokens = 0
+    for message in message_inputs:
+        for key in message:
+            if key == "content":
+                print(message[key].strip())
+                # Encode the content to count tokens
+                # enc = tiktoken.encoding_for_model("gpt-4o")
+                # encoded_tokens = enc.encode(message[key].strip())
+                # total_tokens += len(encoded_tokens)
+            # print(f"Key: {key}, Value: {message[key]}")
+
+    # encoded_tokens = enc.encode(request.message.strip())
+
+
+
+
+    return ChatResponse(response="reply",  cono_id=request.convo_id, user_id=request.user_id, messages=message_inputs)
     # Send to OpenAI Responses API
     response = client.responses.create(
         model="gpt-4o",
-        input=request.message,
-        previous_response_id=convo.last_response_id,
+        input=message_inputs,
         store=False  # Set to True if you want OpenAI to retain conversation
     )
 
+    # Parse the response
     reply = response.output[0].content[0].text
 
-    # Save assistant reply
+    # Add assistant reply to the conversation in database
     add_message(session, convo.id, "assistant", reply)
-
-    # Update response_id for conversation state
-    convo.last_response_id = response.id
-    session.add(convo)
-    session.commit()
-
-    return ChatResponse(response=reply)
