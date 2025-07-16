@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from schemas import ChatRequest, ChatResponse, NewConversationRequest, GenericReturn
 from fastapi.middleware.cors import CORSMiddleware
 import tiktoken
+from Helpers.convertPydantic import convert_pydantic_to_dict
 
 import os
 from openai import OpenAI
@@ -94,35 +95,37 @@ def chat(request: ChatRequest, session: Session = Depends(get_session)):
         message_inputs.append(system_message)
         add_message(session, convo[0]["conversation"].id, system_message["role"], system_message["content"])
     else: # Use existing messages
-        message_inputs = messages.copy()
-
+        message_inputs = convert_pydantic_to_dict(messages)
+    
     # Add user message to the conversation 
     user_message = {"role": "user", "content": request.message.strip()}
     message_inputs.append(user_message)
+        
 
     # Add user message to the database
     add_message(session, convo[0]["conversation"].id, user_message["role"], user_message["content"])
 
+    return ChatResponse(response="Token Limit too high",  cono_id=request.convo_id, user_id=request.user_id, messages=message_inputs) 
 
     # To get the tokeniser corresponding to a specific model in the OpenAI API:
     # enc = tiktoken.encoding_for_model("gpt-4o")
     total_tokens = 0
+    
     for message in message_inputs:
         for key in message:
+            msg = None
             if key == "content":
-                print(message[key].strip())
-                # Encode the content to count tokens
-                # enc = tiktoken.encoding_for_model("gpt-4o")
-                # encoded_tokens = enc.encode(message[key].strip())
-                # total_tokens += len(encoded_tokens)
-            # print(f"Key: {key}, Value: {message[key]}")
-
+                msg = message[key].strip()
+                enc = tiktoken.encoding_for_model("gpt-4o")
+                encoded_tokens = enc.encode(msg.strip())
+                total_tokens += len(encoded_tokens)
+                
+    ## Need to figure out how to manage too many tokens
+    if total_tokens >= 100000:
+        return ChatResponse(response="Token Limit too high",  cono_id=request.convo_id, user_id=request.user_id, messages=message_inputs)   
+    print(f"\nTotal Token are: {total_tokens}")
     # encoded_tokens = enc.encode(request.message.strip())
 
-
-
-
-    return ChatResponse(response="reply",  cono_id=request.convo_id, user_id=request.user_id, messages=message_inputs)
     # Send to OpenAI Responses API
     response = client.responses.create(
         model="gpt-4o",
@@ -134,4 +137,6 @@ def chat(request: ChatRequest, session: Session = Depends(get_session)):
     reply = response.output[0].content[0].text
 
     # Add assistant reply to the conversation in database
-    add_message(session, convo.id, "assistant", reply)
+    add_message(session, convo[0]["conversation"].id, "assistant", reply)
+
+    return ChatResponse(response=reply,  cono_id=request.convo_id, user_id=request.user_id, messages=message_inputs)
