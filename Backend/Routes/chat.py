@@ -3,7 +3,7 @@ from fastapi import FastAPI, Depends, APIRouter
 from sqlmodel import SQLModel, Session
 from Backend.Routes import users
 from models import Conversation, Message
-from memory import get_or_create_conversation, get_conversation_messages, add_message, check_convo, get_conversation, get_conversations
+from memory import get_or_create_conversation, get_conversation_messages, add_message, check_convo, get_conversation, get_conversations, update_title
 from db import engine, get_session
 from pydantic import BaseModel
 from schemas import ChatRequest, ChatResponse, NewConversationRequest, GenericReturn
@@ -36,6 +36,8 @@ def new_chat(request: ChatRequest, session: Session = Depends(get_session)):
 @router.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest, session: Session = Depends(get_session)):
 
+    print(f"Chat request received: {request}")
+
 
     ## Check if conversation exists
     ## If exists, good we will use it
@@ -59,6 +61,10 @@ def chat(request: ChatRequest, session: Session = Depends(get_session)):
     
     # Add user message to the conversation 
     user_message = {"role": "user", "content": request.message.strip()}
+    if len(message_inputs) == 1:
+        print("HERER")
+        update_title(session, convo[0]["conversation"].id, user_message)
+
     message_inputs.append(user_message)
        
     if len(message_inputs) > 10: 
@@ -86,7 +92,7 @@ def chat(request: ChatRequest, session: Session = Depends(get_session)):
                 
     ## Need to figure out how to manage too many tokens
     if total_tokens >= 100000:
-        return ChatResponse(response="Token Limit too high",  cono_id=request.convo_id, user_id=request.user_id, messages=message_inputs)   
+        return ChatResponse(response="Token Limit too high",  convo_id=request.convo_id, user_id=request.user_id, messages=message_inputs)   
     print(f"\nTotal Token are: {total_tokens}")
     # encoded_tokens = enc.encode(request.message.strip())
 
@@ -103,4 +109,4 @@ def chat(request: ChatRequest, session: Session = Depends(get_session)):
     # Add assistant reply to the conversation in database
     add_message(session, convo[0]["conversation"].id, "assistant", reply)
 
-    return ChatResponse(response=reply,  cono_id=request.convo_id, user_id=request.user_id, messages=message_inputs)
+    return ChatResponse(response=reply,  convo_id=request.convo_id, user_id=request.user_id, messages=message_inputs)

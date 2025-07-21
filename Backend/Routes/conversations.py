@@ -18,14 +18,9 @@ load_dotenv()
 router = APIRouter(tags=["Conversations"])
 
 # Load OpenAI API key
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
-
-# Create database tables
-# @app.on_event("startup")
-# def on_startup():
-#     SQLModel.metadata.create_all(engine)
 @router.get("/conversation")
 def get_convo( id: int, user_id: str, session: Session = Depends(get_session)):
     # Create a new conversation
@@ -45,6 +40,7 @@ def get_convo( id: int, user_id: str, session: Session = Depends(get_session)):
 @router.get("/conversations")
 def get_convos( user_id: str, session: Session = Depends(get_session)):
     conversations = get_conversations(db=session, user_id=user_id)
+    # print("Conversations:", conversations)  
 
     if conversations is None:
         return "Not Found"
@@ -61,4 +57,7 @@ def new_chat(request: NewConversationRequest, session: Session = Depends(get_ses
         return NewConversationRequest(id=convo.id, user_id=convo.user_id, messages=messages)
     return "Error creating conversation"
 
+# @router.post("/newchat/title", response_model=ChatResponse)
+# def add_title_to_chat(request: ChatRequest, session: Session = Depends(get_session)):
+#     return ChatResponse(response="Generic Response",  convo_id=request.convo_id, user_id=request.user_id, messages=[])
 

@@ -10,7 +10,7 @@ class ChatRequest(BaseModel):
     id: Optional[int] = None  # Optional conversation ID for existing conversations
 
 class ChatResponse(BaseModel):
-    cono_id: int
+    convo_id: int
     user_id: str
     response: str
     messages: Optional[list] = None  # Optional list of messages for the response

@@ -40,24 +40,13 @@ def get_conversation(db: Session, conversation_id: int, user_id: str) -> Optiona
     
 def get_conversations(db: Session, user_id: str) -> Optional[Conversation]:
     # with Session(engine) as session:
-    convo = db.exec(select(Conversation).where(Conversation.user_id == user_id)).fetchall()
+    convo = db.exec(select(Conversation).order_by(Conversation.created_at.desc()).where(Conversation.user_id == user_id)).fetchall()
     if convo:
         return convo
     else:
         return []
     
 
-def updateConversatinSummary(db: Session, conversation_id: int, summary: str) -> Conversation:
-    # with Session(engine) as session:
-    convo = db.exec(select(Conversation).where(Conversation.id == conversation_id)).first()
-    if convo:
-        convo.summary = summary
-        db.add(convo)
-        db.commit()
-        db.refresh(convo)
-        return convo
-    else:
-        raise ValueError("Conversation not found")
 
 def get_conversation_messages(db: Session, conversation_id: int) -> list[Message]:
     # with Session(engine) as db:
@@ -80,7 +69,44 @@ def add_message(db: Session, conversation_id: int, role: str, content: str) -> M
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Database error: {str(e)}"
         )
+    
+def update_title(db: Session, conversation_id: int, message: dict) -> Message:
+    # with Session(engine) as session:
+    try:
+        convo = db.exec(select(Conversation).where(Conversation.id == conversation_id)).first()
+        if convo is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Conversation not found"
+            )
+        
+        if convo.title is None:
+            convo.title = message["content"]
+            db.add(convo)
+            db.commit()
+            db.refresh(convo)
+            return convo
 
+    except SQLAlchemyError as e:
+        db.rollback()
+        # Log the error here if desired
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error: {str(e)}"
+        )
+    
+
+def updateConversatinSummary(db: Session, conversation_id: int, summary: str) -> Conversation:
+    # with Session(engine) as session:
+    convo = db.exec(select(Conversation).where(Conversation.id == conversation_id)).first()
+    if convo:
+        convo.summary = summary
+        db.add(convo)
+        db.commit()
+        db.refresh(convo)
+        return convo
+    else:
+        raise ValueError("Conversation not found")
 def check_convo(db: Session, conversation_id: int, user_id: str) -> Conversation:
     # with Session(engine) as session:
     convo = db.exec(
@@ -88,3 +114,8 @@ def check_convo(db: Session, conversation_id: int, user_id: str) -> Conversation
     if convo is None:
         return None
     return [ {"conversation" :convo, "messages": convo.messages} ]
+
+# if __name__ == "__main__":
+#     with Session(engine) as session:
+#         # Example usage
+#         update_title(session, 6)
