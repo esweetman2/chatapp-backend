@@ -99,12 +99,14 @@ def chat(request: ChatRequest, session: Session = Depends(get_session)):
     # Send to OpenAI Responses API
     response = client.responses.create(
         model="gpt-4o",
+        tools=[{ "type": "web_search_preview" }],
         input=message_inputs,
         store=False  # Set to True if you want OpenAI to retain conversation
     )
 
     # Parse the response
-    reply = response.output[0].content[0].text
+    reply = response.output_text
+    # reply = response.output[0].content[0].text
 
     # Add assistant reply to the conversation in database
     add_message(session, convo[0]["conversation"].id, "assistant", reply)
