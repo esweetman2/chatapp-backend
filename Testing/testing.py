@@ -112,6 +112,7 @@ def testWebsearch():
         model="gpt-4o",
         tools=[{ "type": "web_search_preview" }],
         input="Who won the Open in 2025?",
+        store=False 
     )
     print(response.output_text)
     # print(response.output)
