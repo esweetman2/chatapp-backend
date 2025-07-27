@@ -28,8 +28,8 @@ config = {
     "vector_store": {
         "provider": "pgvector",
         "config": {
-            "user": "chatbotuser",
-            "password": "chatbotuser",
+            "user": "postgres",
+            "password": "$Hockeylax2",
             "host": "127.0.0.1",
             "port": "5432",
             "dbname": "chatbotDb"
@@ -44,36 +44,60 @@ memory = Memory.from_config(config)
 
 
 def test_vector():
-
-
-    messages = [
-    {"role": "user", "content": "I'm planning to watch a movie tonight. Any recommendations?"},
-    {"role": "assistant", "content": "How about a thriller movies? They can be quite engaging."},
-    {"role": "user", "content": "I'm not a big fan of thriller movies but I love sci-fi movies."},
-    {"role": "assistant", "content": "Got it! I'll avoid thriller recommendations and suggest sci-fi movies in the future."}
-]
     
-    result = memory.add(messages, user_id="esweetman", metadata={"category": "movie_recommendations"})
+    system_message = {"role": "system", "content": "You're an expert programmer that helps build applications."}
+    
+    while True:
+        
+        user_input = input("Write here: ")
+        if user_input.lower() == "exit":
+            print("Breaking loop......")
+            break
+        messages = [system_message]
+        
+        related_memories = memory.search(query=user_input, user_id="esweetman")
+#           print(i["memory"], "\n")
+        print(related_memories)
+        for i in related_memories["results"]:
+            print("printing memory.....")
+            print(i)
+            messages.append({"role": "user", "content": i["memory"]})
+            print()
+            
+        messages.append({"role": "user", "content": user_input})
+        
 
-    print(result)
+        
+        memory.add(user_input, user_id="esweetman")
+        # all_memories = memory.get_all(user_id="esweetman")
 
-    # response = client.responses.create(
-    #     model="gpt-4o",
-    #     tools=[{ "type": "web_search_preview" }],
-    #     input="Who won the 2025 PGA The Open?",
-    # )
+        # print(result)
+        # print(messages)
+        # break
 
-    # print(response.output[1].content[0].text)
+        response = client.responses.create(
+            model="gpt-4o",
+            tools=[{ "type": "web_search_preview" }],
+            input=messages,
+        )
+
+        res = response.output_text
+        print()
+        print(res)
+        print()
+        
+        memory.add(res, user_id="esweetman")
+        
     return
 
-# test_vector()
+test_vector()
 
-all_memories = memory.get_all(user_id="esweetman")
-# print(all_memories)
+# all_memories = memory.get_all(user_id="esweetman")
+# # print(all_memories)
 
-related_memories = memory.search(query="What do you know about me?", user_id="esweetman")
-print()
-print(related_memories["results"])
+# related_memories = memory.search(query="What do you know about me?", user_id="esweetman")
+# print()
+# print(related_memories["results"])
 
-for i in related_memories["results"]:
-    print(i["memory"], "\n")
+# for i in related_memories["results"]:
+#     print(i["memory"], "\n")
