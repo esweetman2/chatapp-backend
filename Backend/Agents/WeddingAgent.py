@@ -102,8 +102,18 @@ def main():
 if __name__ == "__main__":
     # main()
     _weddingAgent = WeddingAgent("esweetman")
-    all_memories = _weddingAgent.get_all_messages()
-    print(all_memories)
+    # all_memories = _weddingAgent.get_all_messages()
+    # print(all_memories)
+    # print(len(all_memories["results"]))
+    print()
+    search = _weddingAgent.related_memories("What time does the wedding ceremony start?")
+    # print(search)
+    
+    for i in search["results"]:
+        if i["score"] >= .8:
+            print(i)
+            print()
+    # print(len(search["results"]))
     
     
     
