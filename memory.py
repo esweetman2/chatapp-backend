@@ -1,4 +1,4 @@
-from sqlmodel import Session, select
+from sqlmodel import Session, select, SQLModel
 from models import Conversation, Message, Users
 from db import engine
 from typing import Optional
@@ -51,7 +51,7 @@ def get_conversations(db: Session, user_id: str) -> Optional[Conversation]:
 def get_conversation_messages(db: Session, conversation_id: int) -> list[Message]:
     # with Session(engine) as db:
     return db.exec(
-        select(Message).where(Message.conversation_id == conversation_id).order_by(Message.timestamp)
+        select(Message).where(Message.conversation_id == conversation_id).order_by(Message.created_at)
     ).all()
 
 def add_message(db: Session, conversation_id: int, role: str, content: str) -> Message:
@@ -115,7 +115,11 @@ def check_convo(db: Session, conversation_id: int, user_id: str) -> Conversation
         return None
     return [ {"conversation" :convo, "messages": convo.messages} ]
 
-# if __name__ == "__main__":
-#     with Session(engine) as session:
-#         # Example usage
-#         update_title(session, 6)
+if __name__ == "__main__":
+    # SQLModel.metadata.create_all(engine)
+    with Session(engine) as session:
+        # Example usage
+        # update_title(session, 6)
+        res = get_or_create_conversation(session, "esweetman")
+        print(res)
+        

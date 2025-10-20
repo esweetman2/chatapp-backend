@@ -13,7 +13,11 @@ from mem0 import Memory
 from openai import OpenAI
 from dotenv import load_dotenv
 load_dotenv()
-
+#####################
+'''
+This is using mem0.
+'''
+############################
 # Load OpenAI API key
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
