@@ -1,8 +1,8 @@
 from sqlmodel import Session, select
 from Backend.Models.models import Conversation, Message, Users
-from db import engine
+from Backend.db import engine
 from typing import Optional
-from schemas import User
+from Backend.Schemas.schemas import User
 
 class UsersService:
     def __init__(self, db: Session):

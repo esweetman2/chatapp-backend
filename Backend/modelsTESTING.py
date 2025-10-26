@@ -17,7 +17,7 @@ class Conversation(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    title: str | None = Field(default=None)
+    title: str = Field(default=None)
     summary: Optional[str] = None  # Summary of the conversation    
     messages: List[Message] = Relationship(back_populates="conversation")
 

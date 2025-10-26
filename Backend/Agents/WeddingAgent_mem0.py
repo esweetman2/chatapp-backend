@@ -4,9 +4,9 @@ from fastapi import FastAPI, Depends
 from sqlmodel import SQLModel, Session
 # from models import Conversation, Message
 from memory import get_or_create_conversation, get_conversation_messages, add_message, updateConversatinSummary
-from db import engine, get_session
+from Backend.db import engine, get_session
 # from pydantic import BaseModel
-from schemas import ChatRequest, ChatResponse
+from Backend.Schemas.schemas import ChatRequest, ChatResponse
 import os
 import json
 from mem0 import Memory

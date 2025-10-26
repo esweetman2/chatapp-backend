@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 import os
 from typing import Literal, List
 from dotenv import load_dotenv
-from db import engine, Session
+from Backend.db import engine, Session
 from Backend.Agents.WeddingAgent.WeddingMemory import MemoryMangement
 from memory import add_message, get_conversation_messages
 import json

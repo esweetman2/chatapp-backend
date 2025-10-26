@@ -2,11 +2,11 @@ from typing import Annotated
 from fastapi import FastAPI, Depends, APIRouter
 from sqlmodel import SQLModel, Session
 from Backend.Routes import users
-from models import Conversation, Message
-from memory import get_or_create_conversation, get_conversation_messages, add_message, check_convo, get_conversation, get_conversations, update_title
-from db import engine, get_session
+from Backend.Models.models import Conversation, Message
+from Backend.memory import get_or_create_conversation, get_conversation_messages, add_message, check_convo, get_conversation, get_conversations, update_title
+from Backend.db import engine, get_session
 from pydantic import BaseModel
-from schemas import ChatRequest, ChatResponse, NewConversationRequest, GenericReturn
+from Backend.Schemas.schemas import ChatRequest, ChatResponse, NewConversationRequest, GenericReturn
 from fastapi.middleware.cors import CORSMiddleware
 import tiktoken
 from Helpers.convertPydantic import convert_pydantic_to_dict

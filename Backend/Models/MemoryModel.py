@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 #   created_at TIMESTAMPTZ DEFAULT now()
 # );
 
-class AgentMomory(SQLModel, table=True):
+class AgentMemory(SQLModel, table=True):
     __tablename__ = "agentmemory"
     id: int = Field(primary_key=True)
     chat_id: int = Field(foreign_key="chats.id")
@@ -22,8 +22,7 @@ class AgentMomory(SQLModel, table=True):
     embedding: Optional[list[float]] = Field(
         sa_column=Column(Vector(1536))
     )
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-    user: Optional["User"] = Relationship(back_populates="chats")
-    messages: List["Message"] = Relationship(back_populates="chat")
-    memories: List["Memory"] = Relationship(back_populates="chat")
+    # user: Optional["AiUser"] = Relationship(back_populates="agentmemory")
+    # messages: List["ChatMessages"] = Relationship(back_populates="agentmemory")

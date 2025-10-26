@@ -3,7 +3,7 @@ from sqlalchemy import Column
 from sqlalchemy import text
 from pgvector.sqlalchemy import Vector
 import uuid
-from db import engine, Session
+from Backend.db import engine, Session
 from typing import Optional
 from datetime import datetime, timezone
 from openai import OpenAI
