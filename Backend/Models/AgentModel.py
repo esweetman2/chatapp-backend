@@ -16,7 +16,7 @@ class Agent(SQLModel, table=True):
     model: str = Field(nullable=False)
     model_id: int = Field(nullable=False)
 
-    chat_messages: List["ChatMessages"] = Relationship(back_populates="agent")
+    # chat_messages: List["ChatMessages"] = Relationship(back_populates="agent")
 
 
 

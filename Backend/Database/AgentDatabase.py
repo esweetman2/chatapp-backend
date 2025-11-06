@@ -15,7 +15,7 @@ class AgentDatabase:
         if id is None:
             return self.db.exec(select(Agent)).all()
         agent = self.db.exec(select(Agent).where(Agent.id == id)).first()
-        print(f"Agent fetched: {agent}")
+        # print(f"Agent fetched: {agent}")
         return agent if agent else None
     
     def add_agent(self, agent_name: str, description: str, model: str, model_id: int, system_message: str) -> Agent:

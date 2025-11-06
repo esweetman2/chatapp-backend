@@ -16,12 +16,24 @@ router = APIRouter()
 
 
 @router.get("/users/", tags=["Users"])
-async def get_agent(id: Optional[int] = None, session: Session = Depends(get_session)):
+async def get_user(id: Optional[int] = None, session: Session = Depends(get_session)):
     try:
         _AiUserDatabase = AiUserDatabase(session)
         agent = _AiUserDatabase.get_user(id)
         if agent:
             return agent
+        else:
+            raise HTTPException(status_code=404, detail= "User not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router.get("/login/", tags=["Login Users"])
+async def login_user(email: str = None, session: Session = Depends(get_session)):
+    try:
+        _AiUserDatabase = AiUserDatabase(session)
+        user = _AiUserDatabase.login_user(email=email)
+        if user:
+            return user
         else:
             raise HTTPException(status_code=404, detail= "User not found")
     except Exception as e:
