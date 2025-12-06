@@ -35,11 +35,11 @@ app.add_middleware(
 # app.include_router(chat.router)
 
 # NEW ROUTES
-app.include_router(AiUserRoute.router)
-app.include_router(AgentRoute.router)
-app.include_router(LLMModelRoute.router)
-app.include_router(ChatRoute.router)
-app.include_router(MessagesRoute.router)
+app.include_router(AiUserRoute.router, prefix="/api")
+app.include_router(AgentRoute.router, prefix="/api")
+app.include_router(LLMModelRoute.router, prefix="/api")
+app.include_router(ChatRoute.router, prefix="/api")
+app.include_router(MessagesRoute.router, prefix="/api")
 
 
 
