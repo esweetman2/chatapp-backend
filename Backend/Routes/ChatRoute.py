@@ -26,7 +26,7 @@ class ChatModel(BaseModel):
     created_date: Optional[datetime] = None
     messages: Optional[list] = []   
 
-@router.get("/chats/", tags=["Chats"])
+@router.get("/chats", tags=["Chats"])
 async def get_chat(id: Optional[int] = None, user_id: Optional[int] = None, session: Session = Depends(get_session)) -> ChatModel | list[ChatModel]:
     try:
         _ChatsDatabase = ChatsDatabase(session)
@@ -47,7 +47,7 @@ async def get_chat(id: Optional[int] = None, user_id: Optional[int] = None, sess
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=str(e))
     
-@router.post("/chats/", tags=["Chats"])
+@router.post("/chats", tags=["Chats"])
 async def add_chat(newChat: ChatModel, session: Session = Depends(get_session)):
     try:
         _ChatsDatabase = ChatsDatabase(session)

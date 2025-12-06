@@ -16,7 +16,7 @@ router = APIRouter()
 #     return [{"username": "Rick"}, {"username": "Morty"}]
 
 
-@router.get("/agent/", tags=["agent"])
+@router.get("/agent", tags=["agent"])
 async def get_agent(id: Optional[int] = None, session: Session = Depends(get_session)):
     try:
         _AgentDatabase = AgentDatabase(session)
@@ -30,7 +30,7 @@ async def get_agent(id: Optional[int] = None, session: Session = Depends(get_ses
 
 
 
-@router.post("/agent/", tags=["agent"])
+@router.post("/agent", tags=["agent"])
 async def create_agent(agent_name: str, description: str, model: str, model_id: int, system_message:str, session: Session = Depends(get_session)):
     try:
         _AgentDatabase = AgentDatabase(session)

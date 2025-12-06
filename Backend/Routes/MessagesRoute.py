@@ -16,7 +16,7 @@ router = APIRouter()
 #     return [{"username": "Rick"}, {"username": "Morty"}]
 
 
-@router.get("/messages/", tags=["Messages"])
+@router.get("/messages", tags=["Messages"])
 async def get_message(id: Optional[int] = None, chat_id: Optional[int] = None, session: Session = Depends(get_session)):
     try:
         _MessagesDatabase = MessagesDatabase(session)
@@ -35,7 +35,7 @@ class ChatMessageRequest(BaseModel):
     role: str
     user_id: int
 
-@router.post("/messages/", tags=["Messages"])
+@router.post("/messages", tags=["Messages"])
 async def add_message(chatMessage: ChatMessageRequest, session: Session = Depends(get_session)):
     print(chatMessage)
     try:
