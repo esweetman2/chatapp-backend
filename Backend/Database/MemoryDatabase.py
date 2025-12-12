@@ -23,14 +23,16 @@ class MemoryDatabase:
         )
         return response.data[0].embedding
     
-    def search_memory(self, query: str,  memory_table: str, top_k=10):
+    def search_memory(self, query: str,  memory_table: str, agent_id: int, top_k=10):
+        print(query, memory_table, agent_id, top_k)
         try:
             query_embedding = self._get_embedding(query)
             embedding_str = f"[{', '.join(map(str, query_embedding))}]"
             # with Session(engine) as session:
             sql = text(f"""
-                SELECT id, memory, embedding <#> CAST(:embedding AS vector) AS score
+                SELECT id, memory_text, embedding <#> CAST(:embedding AS vector) AS score
                 FROM {str(memory_table)}
+                WHERE agent_id = {str(agent_id)}
                 ORDER BY embedding <#> CAST(:embedding AS vector)
                 LIMIT :top_k
             """)
@@ -40,6 +42,7 @@ class MemoryDatabase:
             }
             results = self.db.exec(sql,params=params)
             res = results.fetchall()
+            print(res)
             return res
         except Exception as e:
             return str(e)

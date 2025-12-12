@@ -31,8 +31,11 @@ async def get_chat(id: Optional[int] = None, user_id: Optional[int] = None, sess
     try:
         _ChatsDatabase = ChatsDatabase(session)
         chat = _ChatsDatabase.get_chat(id, user_id)
-        if chat:
+        print(chat)
+        if chat or chat == []:
             return chat
+        elif chat == None:
+            return []
         else:
             raise HTTPException(status_code=404, detail= "Chat not found")
     except Exception as e:

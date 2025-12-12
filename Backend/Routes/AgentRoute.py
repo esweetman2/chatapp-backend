@@ -21,7 +21,8 @@ async def get_agent(id: Optional[int] = None, session: Session = Depends(get_ses
     try:
         _AgentDatabase = AgentDatabase(session)
         agent = _AgentDatabase.get_agent(id)
-        if agent:
+        print(agent)
+        if agent or agent == []:
             return agent
         else:
             raise HTTPException(status_code=404, detail= "Agent not found")

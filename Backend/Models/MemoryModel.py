@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 #     created_date TIMESTAMPTZ NOT NULL DEFAULT NOW()
 # );
 
+
 class AgentMemory(SQLModel, table=True):
     __tablename__ = "agentmemory"
     id: Optional[int] = Field(default=None, primary_key=True)
