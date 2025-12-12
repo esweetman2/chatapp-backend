@@ -19,6 +19,12 @@ class AiUserDatabase:
         print(f"User fetched: {user}")
         return user if user else None
     
+    def login_user(self, email: str = None) -> Optional[AiUser]:
+        """Fetch a model"""
+        user = self.db.exec(select(AiUser).where(AiUser.email == email)).first()
+        print(f"User fetched: {user}")
+        return user if user else None
+    
     def add_user(self, email: str, display_name: str) -> AiUser:
         print(email, display_name, "DATABASE")
         """Add a new model to the database."""

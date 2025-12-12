@@ -15,8 +15,8 @@ router = APIRouter()
 #     return [{"username": "Rick"}, {"username": "Morty"}]
 
 
-@router.get("/users/", tags=["Users"])
-async def get_agent(id: Optional[int] = None, session: Session = Depends(get_session)):
+@router.get("/users", tags=["Users"])
+async def get_user(id: Optional[int] = None, session: Session = Depends(get_session)):
     try:
         _AiUserDatabase = AiUserDatabase(session)
         agent = _AiUserDatabase.get_user(id)
@@ -27,7 +27,19 @@ async def get_agent(id: Optional[int] = None, session: Session = Depends(get_ses
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-@router.post("/users/", tags=["Users"])
+@router.get("/login", tags=["Login Users"])
+async def login_user(email: str = None, session: Session = Depends(get_session)):
+    try:
+        _AiUserDatabase = AiUserDatabase(session)
+        user = _AiUserDatabase.login_user(email=email)
+        if user:
+            return user
+        else:
+            raise HTTPException(status_code=404, detail= "User not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router.post("/users", tags=["Users"])
 async def add_user(email: str, display_name: str, session: Session = Depends(get_session)):
     try:
         print(email, display_name)

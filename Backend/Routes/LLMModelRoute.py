@@ -14,7 +14,7 @@ router = APIRouter()
 #     return [{"username": "Rick"}, {"username": "Morty"}]
 
 
-@router.get("/llmmodel/", tags=["LLM Model"])
+@router.get("/llmmodel", tags=["LLM Model"])
 async def get_model(id: Optional[int] = None, session: Session = Depends(get_session)):
     _LLMModelDatabase = LLMModelDatabase(session)
     agent = _LLMModelDatabase.get_model(id)
@@ -23,7 +23,7 @@ async def get_model(id: Optional[int] = None, session: Session = Depends(get_ses
     else:
         raise HTTPException(status_code=404, detail= "Model not found")
 
-@router.post("/llmmodel/", tags=["LLM Model"])
+@router.post("/llmmodel", tags=["LLM Model"])
 async def create_model(model_name: str, platform: str, session: Session = Depends(get_session)):
     _LLMModelDatabase = LLMModelDatabase(session)
     model = _LLMModelDatabase.add_model(model_name=model_name, platform=platform)

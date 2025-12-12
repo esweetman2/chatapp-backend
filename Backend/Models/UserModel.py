@@ -10,5 +10,5 @@ class AiUser(SQLModel, table=True):
     created_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     # chats: List["Chat"] = Relationship(back_populates="aiusers")
-    chat_messages: List["ChatMessages"] = Relationship(back_populates="ai_user")
+    # chat_messages: List["ChatMessages"] = Relationship(back_populates="ai_user")
     # agents: List["Agent"] = Relationship(back_populates="agents")

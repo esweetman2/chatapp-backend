@@ -10,14 +10,20 @@ class ChatsDatabase:
     def __init__(self, db: Session):
         self.db = db
     
-    def get_chat(self, id: Optional[int] = None) -> Optional[ChatModel]:
+    def get_chat(self, id: Optional[int] = None, user_id: Optional[int] = None):
         """Fetch a model"""
-        if id is None:
-            all_chats = self.db.exec(select(ChatModel)).all()
+        if id is None and user_id is None:
+            all_chats = self.db.exec(select(ChatModel).order_by(ChatModel.created_date.desc())).all()
             return all_chats if all_chats else None
-        model = self.db.exec(select(ChatModel).where(ChatModel.id == id)).first()
-        print(f"User fetched: {model}")
-        return model if model else None
+        elif id is not None:
+            chat = self.db.exec(select(ChatModel).where(ChatModel.id == id)).first()
+            print(f"User fetched: {chat}")
+            return chat if chat else None
+        elif user_id is not None:
+            chats = self.db.exec(select(ChatModel).where(ChatModel.user_id == user_id).order_by(ChatModel.created_date.desc())).all()
+            return chats if chats else None
+        else:
+            return None
     
     def add_chat(self, user_id: id, agent_id:int , title: Optional[str] = None) -> ChatModel:
         """Add a new model to the database."""

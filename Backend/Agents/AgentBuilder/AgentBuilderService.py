@@ -18,14 +18,20 @@ from sqlmodel import Session
 # from Backend.Agents.WeddingAgent.WeddingMemory import MemoryMangement
 # from memory import add_message, get_conversation_messages
 from Backend.Database.AgentDatabase import AgentDatabase
+from Backend.Database.ChatsDatabase import ChatsDatabase
+from Backend.Database.MessagesDatabase import MessagesDatabase
 load_dotenv()
 
 class AgentBuilderService:
-    def __init__(self, db_session, agent_id: int, messages: List = []):
+    def __init__(self, db_session, agent_id: int, chat_id: int, query: str = "", role: str = "user", user_id: int = None):
         self.db_session = db_session
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         self.agent = AgentDatabase(db_session).get_agent(agent_id)
-        self.messages = messages
+        self.chat_id = chat_id
+        self.role = role
+        self.query = query
+        self.user_id = user_id
+        self._MessagesDatabase = MessagesDatabase(self.db_session)
         if not self.agent:
             raise ValueError(f"Agent with id={agent_id} not found")
         
@@ -43,37 +49,84 @@ class AgentBuilderService:
             "system_message": self.system_message,
             "agent_model": self.agent_model
         }
-    # def _generate_input(self,query, system_prompt):
-    #     inputs = [
-    #         {
-    #             "role": "system", 
-    #             "content": system_prompt
-    #         },
-    #         {
-    #             "role": "user",
-    #             "content": query,
-    #         },
-    #     ]
-    #     return inputs
-    def generate_response(self, inputs):
-        response = self.client.responses.parse(
-            model=self.agent_model,
-            input=inputs,
-            tools=[{ "type": "web_search_preview" }],
-            store=False,
-        )
-
-        llm_response = response.output_text
-        # print(response)
-        return llm_response
+    def _get_message_history(self):
+        messages = self._MessagesDatabase.get_message(chat_id=self.chat_id)
+        if messages:
+            message_list = []
+            for message in messages:
+                message_list.append({
+                    "role": message.role,
+                    "content": message.message
+                })
+            return message_list
+        return []
     
-if __name__ == "__main__":
-    messages = []
-    with Session(engine) as session:
+    def _generate_input(self):
+        inputs = [
+            {
+                "role": "system", 
+                "content": self.system_message
+            },
+        ]
+        messages = self._get_message_history()
+        for message in messages:
+            inputs.append({
+                "role": message['role'],
+                "content": message['content'],
+            })
+        inputs.append({
+            "role": self.role,
+            "content": self.query
+        })
 
-        agent = AgentBuilderService(session, agent_id=4, messages=messages)
-        agent_info = agent.test_agent()
-        print(agent_info)
+        return inputs
+    
+    def _store_message(self, role: str, content: str):
+        # _MessageDatabase = MessagesDatabase(self.db_session)
+        add_message = self._MessagesDatabase.add_message(
+            user_id=self.user_id,
+            agent_id=self.agent_id,
+            chat_id=self.chat_id,
+            message=content,
+            role=role
+        )
+        return add_message
+
+    
+    def generate_response(self):
+
+        try:
+            inputs = self._generate_input()
+            # print(inputs)
+            response = self.client.responses.parse(
+                model=self.agent_model,
+                input=inputs,
+                tools=[{ "type": "web_search_preview" }],
+                store=False,
+            )
+
+            self._store_message(role=self.role, content=self.query)
+            agent_response = self._store_message(role="assistant", content=response.output_text)
+
+        except Exception as e:
+            print("Error storing agent response: ", str(e))
+            agent_response = None
+        
+        return agent_response
+    
+# if __name__ == "__main__":
+#     messages = []
+#     with Session(engine) as session:
+
+#         agent = AgentBuilderService(session, agent_id=4, chat_id=1, query="What is your purpose?", role="user", user_id=1)
+
+#         response = agent.generate_response()
+#         print("Agent Response: ", response)
+
+
+
+
+
     
 #     agent = WeddingAgent2()
     
