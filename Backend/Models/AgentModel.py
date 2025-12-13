@@ -15,6 +15,7 @@ class Agent(SQLModel, table=True):
     updated_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     model: str = Field(nullable=False)
     model_id: int = Field(nullable=False)
+    use_memory: bool
 
     # chat_messages: List["ChatMessages"] = Relationship(back_populates="agent")
 

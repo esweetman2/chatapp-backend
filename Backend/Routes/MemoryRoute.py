@@ -24,7 +24,7 @@ async def search_memory( query: str, top_k: int, agent_id: int, session: Session
         memory = _MemoryDatabase.search_memory(query=query, memory_table="agentmemory", agent_id=agent_id, top_k=top_k)
         print(memory)
         if memory or memory == []:
-            return "memory"
+            return str(memory)
         else:
             raise HTTPException(status_code=404, detail= "Agent not found")
     except Exception as e:

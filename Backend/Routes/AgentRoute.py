@@ -4,6 +4,8 @@ from Backend.db import  get_session
 from typing import Optional
 from Backend.Schemas.AgentSchema import Agent
 from Backend.Database.AgentDatabase import AgentDatabase
+from pydantic import BaseModel
+from datetime import datetime
 # from ..Database.usersService import UsersService
 # from Backend.Database.usersService import UsersService
 
@@ -36,6 +38,28 @@ async def create_agent(agent_name: str, description: str, model: str, model_id: 
     try:
         _AgentDatabase = AgentDatabase(session)
         agent = _AgentDatabase.add_agent(agent_name=agent_name, description=description, model=model, model_id=model_id, system_message=system_message)
+        return agent
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+class AgentResponse(BaseModel):
+    id: int
+    agent_name: str
+    description: str
+    system_message: str
+    created_date: datetime
+    updated_date: datetime
+    model: str
+    model_id: int
+    use_memory: bool
+    
+    
+      
+@router.put("/agent", tags=["agent"])
+async def put_agent(agent_id: int, updates: AgentResponse, session: Session = Depends(get_session)):
+    try:
+        _AgentDatabase = AgentDatabase(session)
+        agent = _AgentDatabase.update_agent(agent_id=agent_id, updates=updates)
         return agent
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

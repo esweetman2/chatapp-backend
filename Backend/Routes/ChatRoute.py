@@ -31,7 +31,7 @@ async def get_chat(id: Optional[int] = None, user_id: Optional[int] = None, sess
     try:
         _ChatsDatabase = ChatsDatabase(session)
         chat = _ChatsDatabase.get_chat(id, user_id)
-        print(chat)
+        # print(chat)
         if chat or chat == []:
             return chat
         elif chat == None:

@@ -20,6 +20,7 @@ from sqlmodel import Session
 from Backend.Database.AgentDatabase import AgentDatabase
 from Backend.Database.ChatsDatabase import ChatsDatabase
 from Backend.Database.MessagesDatabase import MessagesDatabase
+from Backend.Database.MemoryDatabase import MemoryDatabase
 load_dotenv()
 
 class AgentBuilderService:
@@ -32,14 +33,17 @@ class AgentBuilderService:
         self.query = query
         self.user_id = user_id
         self._MessagesDatabase = MessagesDatabase(self.db_session)
+        self._MemoryDatabase = MemoryDatabase(self.db_session)
         if not self.agent:
             raise ValueError(f"Agent with id={agent_id} not found")
-        
+         
         self.agent_id = agent_id
         self.agent_name = self.agent.agent_name
         self.description = self.agent.description
         self.system_message = self.agent.system_message
-        self.agent_model = self.agent.model   
+        self.agent_model = self.agent.model 
+        self.use_memory = self.agent.use_memory
+        self.memory_table = "agentmemory"
     
     def test_agent(self):
         return {
@@ -91,11 +95,26 @@ class AgentBuilderService:
             role=role
         )
         return add_message
+    
+    def _get_memories(self, query: str, top_k=10):
+        memories = self._MemoryDatabase.search_memory(
+            query=query,  
+            memory_table=self.memory_table, 
+            agent_id=self.agent_id,
+            top_k=top_k
+        )
+        
+        return memories
 
     
     def generate_response(self):
-
         try:
+            print(self.use_memory)
+            memories = []
+            if self.use_memory == True:
+                memories = self._get_memories(query=self.query, top_k=10)
+                self.system_message = self.system_message + f"\nYou MUST use the context below to help give a more accurate response.\n{str(memories)}"
+
             inputs = self._generate_input()
             # print(inputs)
             response = self.client.responses.parse(

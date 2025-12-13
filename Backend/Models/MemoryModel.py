@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 # );
 
 
-class AgentMemory(SQLModel, table=True):
+class AgentMemoryModel(SQLModel, table=True):
     __tablename__ = "agentmemory"
     id: Optional[int] = Field(default=None, primary_key=True)
     agent_id: Optional[int] = Field(default=None, foreign_key="agents.id")

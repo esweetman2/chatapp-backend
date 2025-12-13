@@ -50,7 +50,14 @@ async def add_message(chatMessage: ChatMessageRequest, session: Session = Depend
 @router.post("/messages/agent", tags=["Messages"])
 async def send_chat( chatMessage: ChatMessageRequest, session: Session = Depends(get_session)):
     try:
-        _AgentBuilderService = AgentBuilderService(db_session=session, agent_id=chatMessage.agent_id, chat_id=chatMessage.chat_id, query=chatMessage.message, role=chatMessage.role, user_id=chatMessage.user_id)
+        _AgentBuilderService = AgentBuilderService(
+            db_session=session, 
+            agent_id=chatMessage.agent_id, 
+            chat_id=chatMessage.chat_id, 
+            query=chatMessage.message, 
+            role=chatMessage.role, 
+            user_id=chatMessage.user_id
+            )
         response = _AgentBuilderService.generate_response()
         if response:
             return response

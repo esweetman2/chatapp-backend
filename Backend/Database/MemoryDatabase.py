@@ -7,7 +7,7 @@ from Backend.db import engine, Session
 from typing import Optional
 from datetime import timezone
 from dotenv import load_dotenv
-from Backend.Models.MemoryModel import AgentMemory
+from Backend.Models.MemoryModel import AgentMemoryModel
 import os
 load_dotenv()
 
@@ -24,7 +24,6 @@ class MemoryDatabase:
         return response.data[0].embedding
     
     def search_memory(self, query: str,  memory_table: str, agent_id: int, top_k=10):
-        print(query, memory_table, agent_id, top_k)
         try:
             query_embedding = self._get_embedding(query)
             embedding_str = f"[{', '.join(map(str, query_embedding))}]"
@@ -50,7 +49,7 @@ class MemoryDatabase:
     def store_memory(self, memory_text: str, user_id: int, agent_id: int):
         try:
             embedding = self._get_embedding(memory_text)
-            new_memory = AgentMemory(
+            new_memory = AgentMemoryModel(
                 agent_id=agent_id,
                 user_id=user_id,
                 memory_text=memory_text,
