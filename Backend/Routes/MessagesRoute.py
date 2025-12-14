@@ -58,10 +58,12 @@ async def send_chat( chatMessage: ChatMessageRequest, session: Session = Depends
             role=chatMessage.role, 
             user_id=chatMessage.user_id
             )
+        print("here")
         response = _AgentBuilderService.generate_response()
         if response:
             return response
         else:
             raise HTTPException(status_code=404, detail= "No response from Messages.")
     except Exception as e:
+        print(e)
         raise HTTPException(status_code=500, detail=str(e))

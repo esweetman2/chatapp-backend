@@ -17,10 +17,13 @@ from sqlmodel import Session
 # from db import engine, Session
 # from Backend.Agents.WeddingAgent.WeddingMemory import MemoryMangement
 # from memory import add_message, get_conversation_messages
+import json
 from Backend.Database.AgentDatabase import AgentDatabase
 from Backend.Database.ChatsDatabase import ChatsDatabase
 from Backend.Database.MessagesDatabase import MessagesDatabase
 from Backend.Database.MemoryDatabase import MemoryDatabase
+from Backend.Database.AgentToolsDatabase import AgentToolsDatabase
+from Backend.Agents.Tools.GoogleSheets import GoogleSheets
 load_dotenv()
 
 class AgentBuilderService:
@@ -34,6 +37,9 @@ class AgentBuilderService:
         self.user_id = user_id
         self._MessagesDatabase = MessagesDatabase(self.db_session)
         self._MemoryDatabase = MemoryDatabase(self.db_session)
+        self._AgentToolsDatabase = AgentToolsDatabase(self.db_session)
+        self._GoogleSheets = GoogleSheets()
+
         if not self.agent:
             raise ValueError(f"Agent with id={agent_id} not found")
          
@@ -53,6 +59,65 @@ class AgentBuilderService:
             "system_message": self.system_message,
             "agent_model": self.agent_model
         }
+    def _get_agent_tools(self):
+        try:
+            tools = []
+            agent_tools = self._AgentToolsDatabase.get_agent_tool(agent_id=self.agent_id)
+            for i in agent_tools:
+                tools.append(self._AgentToolsDatabase.get_tools(tool_id=i.tool_id))
+
+            return tools
+        
+        except Exception as e:
+            print("Error fetching agent tools: ", str(e))
+            return []
+    
+    def _format_agent_tools(self, tools):
+
+        formatted_tools = []
+        for tool in tools:
+            _tool = {
+                "type": tool.tool_type,
+                "name": tool.name,
+                "description": tool.description,
+                "parameters": tool.parameters
+            }
+            if tool.tool_type == "web_search_preview":
+                del _tool['name']
+                del _tool['description']
+                del _tool['parameters']
+
+            formatted_tools.append(_tool)
+
+        return formatted_tools
+    
+    def _get_response_tools(self, response_output):
+        tool_calls = []
+
+        for item in response_output:
+            if item.type == "function_call":
+                tool_calls.append(item)
+        return tool_calls
+    
+    def _format_tools_for_response(self, tools_calls):
+        input_list = []
+        for tool in tools_calls:
+            if tool.name == "read_google_sheet":
+                args = json.loads(tool.arguments)
+
+                google_sheet_data = self._GoogleSheets.read_google_sheet(google_sheet_name=args["google_sheet_name"], worksheet=args["worksheet"])
+
+                # 4. Provide function call results to the model
+                input_list.append({
+                    "type": "function_call_output",
+                    "call_id": tool.call_id,
+                    "output": json.dumps({
+                    "read_google_sheet": google_sheet_data
+                    })
+                })
+            # formatted_tools.append(_tool)
+        return input_list
+    
     def _get_message_history(self):
         messages = self._MessagesDatabase.get_message(chat_id=self.chat_id)
         if messages:
@@ -109,6 +174,9 @@ class AgentBuilderService:
     
     def generate_response(self):
         try:
+            tools = self._get_agent_tools()
+            # print(tools)
+            format_agent_tools = self._format_agent_tools(tools)
             print(self.use_memory)
             memories = []
             if self.use_memory == True:
@@ -120,18 +188,37 @@ class AgentBuilderService:
             response = self.client.responses.parse(
                 model=self.agent_model,
                 input=inputs,
-                tools=[{ "type": "web_search_preview" }],
+                # tools=[{ "type": "web_search_preview" }],
+                tools=format_agent_tools,
+                store=False,
+            )
+
+            tools_calls = self._get_response_tools(response.output)
+            if not tools_calls:
+                self._store_message(role=self.role, content=self.query)
+                agent_response = self._store_message(role="assistant", content=response.output_text)
+                return agent_response
+
+            function_call_inputs = self._format_tools_for_response(tools_calls)
+
+            second_inputs = inputs + response.output + function_call_inputs
+ 
+            function_call_response = self.client.responses.parse(
+                model=self.agent_model,
+                input=second_inputs,
+                tools=format_agent_tools,
                 store=False,
             )
 
             self._store_message(role=self.role, content=self.query)
-            agent_response = self._store_message(role="assistant", content=response.output_text)
+            agent_response = self._store_message(role="assistant", content=function_call_response.output_text)
 
+            return agent_response
         except Exception as e:
             print("Error storing agent response: ", str(e))
             agent_response = None
         
-        return agent_response
+            return agent_response
     
 # if __name__ == "__main__":
 #     messages = []
@@ -143,10 +230,6 @@ class AgentBuilderService:
 #         print("Agent Response: ", response)
 
 
-
-
-
-    
 #     agent = WeddingAgent2()
     
 #     while True:
