@@ -1,12 +1,3 @@
-
-# from typing import Annotated
-from fastapi import FastAPI, Depends
-from sqlmodel import SQLModel, Session
-# from models import Conversation, Message
-from memory import get_or_create_conversation, get_conversation_messages, add_message, updateConversatinSummary
-from db import engine, get_session
-# from pydantic import BaseModel
-from schemas import ChatRequest, ChatResponse
 import os
 import json
 from openai import OpenAI
@@ -23,6 +14,7 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 # session = get_session()
 def get_current_time():
     return datetime.now(timezone.utc)
+
 
 tools = [{
     "type": "function",
