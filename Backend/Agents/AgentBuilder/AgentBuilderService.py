@@ -194,12 +194,14 @@ class AgentBuilderService:
             )
 
             tools_calls = self._get_response_tools(response.output)
+            print("Tool Calls: ", tools_calls)
             if not tools_calls:
                 self._store_message(role=self.role, content=self.query)
                 agent_response = self._store_message(role="assistant", content=response.output_text)
                 return agent_response
 
             function_call_inputs = self._format_tools_for_response(tools_calls)
+            print("Function Call Inputs: ", function_call_inputs)
 
             second_inputs = inputs + response.output + function_call_inputs
  
