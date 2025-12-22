@@ -25,13 +25,14 @@ class ChatModel(BaseModel):
     title: Optional[str] = None
     created_date: Optional[datetime] = None
     messages: Optional[list] = []   
+    summary: Optional[str]
+    message_start_index: Optional[int]
 
 @router.get("/chats", tags=["Chats"])
 async def get_chat(id: Optional[int] = None, user_id: Optional[int] = None, session: Session = Depends(get_session)) -> ChatModel | list[ChatModel]:
     try:
         _ChatsDatabase = ChatsDatabase(session)
         chat = _ChatsDatabase.get_chat(id, user_id)
-        # print(chat)
         if chat or chat == []:
             return chat
         elif chat == None:
@@ -57,6 +58,16 @@ async def add_chat(newChat: ChatModel, session: Session = Depends(get_session)):
         new_chat = _ChatsDatabase.add_chat(user_id=newChat.user_id, agent_id=newChat.agent_id, title=newChat.title)
         print(newChat)
         return new_chat
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router.put("/chats", tags=["Put Chats"])
+async def update_chat(updates: ChatModel, session: Session = Depends(get_session)):
+    try:
+        _ChatsDatabase = ChatsDatabase(session)
+        chat = _ChatsDatabase.update_chat(updates=updates)
+        return chat
+    
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

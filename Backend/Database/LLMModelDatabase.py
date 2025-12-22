@@ -12,11 +12,12 @@ class LLMModelDatabase:
     
     def get_model(self, id: Optional[int] = None) -> Optional[LLMModel]:
         """Fetch a model"""
+
         if id is None:
             all_models = self.db.exec(select(LLMModel)).all()
             return all_models if all_models else None
         model = self.db.exec(select(LLMModel).where(LLMModel.id == id)).first()
-        print(f"User fetched: {model}")
+        # print(f"User fetched: {model}")
         return model if model else None
     
     def add_model(self, model_name: str, platform: str) -> LLMModel:

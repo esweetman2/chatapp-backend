@@ -1,11 +1,13 @@
 from openai import OpenAI
-from pydantic import BaseModel, Field
+# from pydantic import BaseModel, Field
 import os
-from typing import Literal, List
+# from typing import Literal, List
 from dotenv import load_dotenv
-from Backend.db import engine, Session
-from Backend.Agents.WeddingAgent.WeddingMemory import MemoryMangement
-from memory import add_message, get_conversation_messages
+# from Backend.db import engine, Session
+# from Backend.Agents.WeddingAgent.WeddingMemory import MemoryMangement
+# from memory import add_message, get_conversation_messages
+from Backend.Agents.Tools.Tools import tools
+from Backend.Agents.Tools.GoogleSheets import GoogleSheets
 import json
 load_dotenv()
 
@@ -17,23 +19,7 @@ load_dotenv()
 #     memory: List[str] = Field(..., description="A list of relevant memories or pieces of information associated with the fact including the memory id.")
 #     reason: str
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-tools = [
-    {
-        "type": "function",
-        "name": "get_horoscope",
-        "description": "Get today's horoscope for an astrological sign.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "sign": {
-                    "type": "string",
-                    "description": "An astrological sign like Taurus or Aquarius",
-                },
-            },
-            "required": ["sign"],
-        },
-    },
-]
+
 
   
 class Agent:
@@ -54,10 +40,7 @@ class Agent:
         llm_response = response.output
         return response
 
-def get_horoscope(sign):
-    return f"{sign}: Next Tuesday you will befriend a baby otter."
-    
-if __name__ == '__main__':
+def googleSheet_test():
     _agent = Agent("gpt-4")
     inputs = [{
                 "role": "system",
@@ -65,10 +48,12 @@ if __name__ == '__main__':
             },
             {
               "role": "user",
-              "content": "What is my horoscope? I am an Aquarius."    
+              "content": "What is the schedule for the honeymoon trip?"    
               
               }]
     res = _agent.generate_response(inputs=inputs)
+
+    
     
     # Save function call outputs for subsequent requests
     function_call = None
@@ -80,8 +65,10 @@ if __name__ == '__main__':
             function_call_arguments = json.loads(item.arguments)
 
     # 3. Execute the function logic for get_horoscope
-    result = {"horoscope": get_horoscope(function_call_arguments["sign"])}
-
+    _GoogleSheets = GoogleSheets()
+    print(function_call_arguments)
+    result = {"read_google_sheet": _GoogleSheets.read_google_sheet(function_call_arguments["google_sheet_name"], function_call_arguments["worksheet"])}
+    print("Function call result: ", result)
     # 4. Provide function call results to the model
     inputs.append({
         "type": "function_call_output",
@@ -89,8 +76,8 @@ if __name__ == '__main__':
         "output": json.dumps(result),
     })
 
-    print("Final input:")
-    print(inputs)
+    # print("Final input:")
+    # print(inputs)
 
     response = client.responses.create(
         model="gpt-4",
@@ -99,10 +86,28 @@ if __name__ == '__main__':
         input=inputs,
     )
 
-    # 5. The model should be able to give a response!
+    # # 5. The model should be able to give a response!
     print("Final output:")
-    print(response.model_dump_json(indent=2))
+    # print(response.model_dump_json(indent=2))
     print("\n" + response.output_text)
+
+def token_test():
+    import tiktoken
+
+    # Choose the encoding based on the model
+    encoding = tiktoken.encoding_for_model("gpt-4")
+
+    # Sample text
+    text = "Hello, how are you doing today?"
+
+    # Encode the text to get token IDs
+    token_ids = encoding.encode(text)
+
+    print("Token IDs:", token_ids)
+    print("Number of tokens:", len(token_ids))  
+if __name__ == '__main__':
+    token_test()
+
     
 
 

@@ -9,5 +9,6 @@ class LLMModel(SQLModel, table=True):
     model_name: str = Field(nullable=False, unique=True)
     platform: str
     created_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
+    output_tokens: int = Field(nullable=False)
+    context_window: int = Field(nullable=False)
     

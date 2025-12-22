@@ -6,7 +6,7 @@ This is class for constructing agents to do functionality.
 '''
 
 
-
+import tiktoken
 from openai import OpenAI
 from pydantic import BaseModel, Field
 import os
@@ -23,132 +23,69 @@ from Backend.Database.ChatsDatabase import ChatsDatabase
 from Backend.Database.MessagesDatabase import MessagesDatabase
 from Backend.Database.MemoryDatabase import MemoryDatabase
 from Backend.Database.AgentToolsDatabase import AgentToolsDatabase
+from Backend.Database.LLMModelDatabase import LLMModelDatabase
+from Backend.Database.ChatsDatabase import ChatsDatabase
 from Backend.Agents.Tools.GoogleSheets import GoogleSheets
+# from Backend.Agents.ContextWindow.ContextWindowChecker import ContextWindowChecker
+from Backend.Agents.Memory.base import MemoryFactory
+from Backend.Agents.Tools.base import ToolFactory
+from Backend.Agents.LLMInputs.base import LLMInputsFactory
+from Backend.Agents.ContextWindow.base import ContextWindowFactory
+from Backend.Agents.Summary.base import SummaryFactory
 load_dotenv()
 
 class AgentBuilderService:
     def __init__(self, db_session, agent_id: int, chat_id: int, query: str = "", role: str = "user", user_id: int = None):
         self.db_session = db_session
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        self.agent = AgentDatabase(db_session).get_agent(agent_id)
+        self._AgentDatabase = AgentDatabase(db_session)
+        self.agent = self._AgentDatabase.get_agent(agent_id)
         self.chat_id = chat_id
         self.role = role
         self.query = query
         self.user_id = user_id
         self._MessagesDatabase = MessagesDatabase(self.db_session)
+        self.messages = self._MessagesDatabase.get_message(chat_id=chat_id)
+        self._ChatsDatabase = ChatsDatabase(self.db_session)
+
         self._MemoryDatabase = MemoryDatabase(self.db_session)
         self._AgentToolsDatabase = AgentToolsDatabase(self.db_session)
+        self._LLMModelDatabase = LLMModelDatabase(self.db_session)
         self._GoogleSheets = GoogleSheets()
 
         if not self.agent:
             raise ValueError(f"Agent with id={agent_id} not found")
          
+        self.chat_summary = self._ChatsDatabase.get_chat(id=chat_id)
+        self.message_start_index = self.chat_summary.message_start_index
         self.agent_id = agent_id
         self.agent_name = self.agent.agent_name
         self.description = self.agent.description
         self.system_message = self.agent.system_message
-        self.agent_model = self.agent.model 
+        self.agent_model = self.agent.model
         self.use_memory = self.agent.use_memory
+        self.agent_model_id = self.agent.model_id
         self.memory_table = "agentmemory"
+
+        self.memory_factory = MemoryFactory.create_memory_strategy(self, agent_id=self.agent_id, use_memory=self.use_memory, memory_db=self._MemoryDatabase)
+        self._ToolFactory = ToolFactory(db=self._AgentToolsDatabase, agent_id=self.agent_id)
+        self.tools = self._ToolFactory.create_agent_tools()
+        self.llm_input_factory = LLMInputsFactory(db=self._MessagesDatabase)
+        self.context_window_factory = ContextWindowFactory(db=self._LLMModelDatabase)
+        self.summary_factory = SummaryFactory(db=self._AgentDatabase)
     
-    def test_agent(self):
-        return {
-            "agent_id": self.agent_id,
-            "agent_name": self.agent_name,
-            "description": self.description,
-            "system_message": self.system_message,
-            "agent_model": self.agent_model
-        }
-    def _get_agent_tools(self):
-        try:
-            tools = []
-            agent_tools = self._AgentToolsDatabase.get_agent_tool(agent_id=self.agent_id)
-            for i in agent_tools:
-                tools.append(self._AgentToolsDatabase.get_tools(tool_id=i.tool_id))
-
-            return tools
-        
-        except Exception as e:
-            print("Error fetching agent tools: ", str(e))
-            return []
     
-    def _format_agent_tools(self, tools):
-
-        formatted_tools = []
-        for tool in tools:
-            _tool = {
-                "type": tool.tool_type,
-                "name": tool.name,
-                "description": tool.description,
-                "parameters": tool.parameters
-            }
-            if tool.tool_type == "web_search_preview":
-                del _tool['name']
-                del _tool['description']
-                del _tool['parameters']
-
-            formatted_tools.append(_tool)
-
-        return formatted_tools
-    
-    def _get_response_tools(self, response_output):
-        tool_calls = []
-
-        for item in response_output:
-            if item.type == "function_call":
-                tool_calls.append(item)
-        return tool_calls
-    
-    def _format_tools_for_response(self, tools_calls):
-        input_list = []
-        for tool in tools_calls:
-            if tool.name == "read_google_sheet":
-                args = json.loads(tool.arguments)
-
-                google_sheet_data = self._GoogleSheets.read_google_sheet(google_sheet_name=args["google_sheet_name"], worksheet=args["worksheet"])
-
-                # 4. Provide function call results to the model
-                input_list.append({
-                    "type": "function_call_output",
-                    "call_id": tool.call_id,
-                    "output": json.dumps({
-                    "read_google_sheet": google_sheet_data
-                    })
-                })
-            # formatted_tools.append(_tool)
-        return input_list
-    
-    def _get_message_history(self):
-        messages = self._MessagesDatabase.get_message(chat_id=self.chat_id)
-        if messages:
-            message_list = []
-            for message in messages:
-                message_list.append({
-                    "role": message.role,
-                    "content": message.message
-                })
-            return message_list
-        return []
-    
-    def _generate_input(self):
-        inputs = [
-            {
-                "role": "system", 
-                "content": self.system_message
-            },
-        ]
-        messages = self._get_message_history()
-        for message in messages:
-            inputs.append({
-                "role": message['role'],
-                "content": message['content'],
-            })
-        inputs.append({
-            "role": self.role,
-            "content": self.query
-        })
-
-        return inputs
+    # def _get_message_history(self):
+    #     messages = self._MessagesDatabase.get_message(chat_id=self.chat_id)
+    #     if messages:
+    #         message_list = []
+    #         for message in messages:
+    #             message_list.append({
+    #                 "role": message.role,
+    #                 "content": message.message
+    #             })
+    #         return message_list
+    #     return []
     
     def _store_message(self, role: str, content: str):
         # _MessageDatabase = MessagesDatabase(self.db_session)
@@ -161,54 +98,112 @@ class AgentBuilderService:
         )
         return add_message
     
-    def _get_memories(self, query: str, top_k=10):
-        memories = self._MemoryDatabase.search_memory(
-            query=query,  
-            memory_table=self.memory_table, 
-            agent_id=self.agent_id,
-            top_k=top_k
-        )
-        
-        return memories
-
-    
-    def generate_response(self):
+    def _agent_setup(self):
         try:
-            tools = self._get_agent_tools()
-            # print(tools)
-            format_agent_tools = self._format_agent_tools(tools)
-            print(self.use_memory)
-            memories = []
-            if self.use_memory == True:
-                memories = self._get_memories(query=self.query, top_k=10)
-                self.system_message = self.system_message + f"\nYou MUST use the context below to help give a more accurate response.\n{str(memories)}"
 
-            inputs = self._generate_input()
-            # print(inputs)
+            self._rolling_window_messages()
+
+            memories = self.memory_factory.get_memories(query=self.query, memory_table=self.memory_table, top_k=10)
+            self.system_message = self.system_message + f"\nYou MUST use the context below to help give a more accurate response.\n{str(memories)}"
+
+            inputs = self.llm_input_factory.create_inputs_strategy(messages=self.messages, system_message=self.system_message, query=self.query, role=self.role)
+
+            inputs.insert(0, {"role": "system", "content": self.system_message})
+
+            context_check = self.context_window_factory.context_window_checker(
+                agent_model=self.agent_model, 
+                model_id=self.agent_model_id, 
+                messages=inputs
+                )
+            
+            agent = {
+                "memories": memories,
+                "context_check": context_check, 
+                "inputs": inputs,
+                "tools": self.tools,
+                "system_message": self.system_message,
+                "query": self.query,
+            }
+            
+            return agent
+        except Exception as e:
+            print("Error storing agent response: ", str(e))
+            agent_response = None
+        
+            return agent_response
+
+    # def agent_orchestrator(self, agent_setup, summary, inputs):
+    #     agent_setup["context_check"] = True
+    #     print(agent_setup["context_check"])
+    #     if agent_setup["context_check"] == True:
+    #         # print("summarize")
+    #         summary_agent = self.summary_factory.get_summary_agent()
+
+    #         prepared_summary_agent = self.summary_factory.prepare_summary_agent(agent=summary_agent, summary=summary)
+
+    #         summary_inputs = self.llm_input_factory.create_summary_inputs(inputs=inputs, index=self.message_start_index)
+
+    #         prepared_summary_agent["new_index"] = summary_inputs["new_index"]
+    #         prepared_summary_agent["inputs"] = summary_inputs["summary_messages"]
+    #         prepared_summary_agent["memories"] = []
+
+    #         # print(self.messages.index(prepared_summary_agent["inputs"][1]))
+    #         self.handle_update_chat_index(self.messages,prepared_summary_agent["inputs"])
+            
+    #         return prepared_summary_agent
+        
+    #     else:
+    #         return agent_setup
+    # def handle_update_chat_index(self):
+    #     new_index = len(self.messages) - 
+    #     print(new_index)
+        
+    # def handle_summary_call(self, agent):
+
+    #     response = self.client.responses.parse(
+    #             model=agent["model"],
+    #             input=agent["inputs"],
+    #             # tools=[{ "type": "web_search_preview" }],
+    #             tools=[],
+    #             store=False,
+    #         )
+        
+    #     return response.output_text
+    
+    def _rolling_window_messages(self):
+        if len(self.messages) > 10:
+            self.messages = self.messages[-10:]
+            return
+
+    def generate_response(self):
+        
+        try:
+            agent = self._agent_setup()
+
+
             response = self.client.responses.parse(
                 model=self.agent_model,
-                input=inputs,
+                input=agent["inputs"],
                 # tools=[{ "type": "web_search_preview" }],
-                tools=format_agent_tools,
+                tools=self.tools,
                 store=False,
             )
 
-            tools_calls = self._get_response_tools(response.output)
-            print("Tool Calls: ", tools_calls)
-            if not tools_calls:
+            response_tools = self._ToolFactory.llm_response_tool_selector(response.output)
+
+            if not response_tools:
                 self._store_message(role=self.role, content=self.query)
                 agent_response = self._store_message(role="assistant", content=response.output_text)
                 return agent_response
 
-            function_call_inputs = self._format_tools_for_response(tools_calls)
-            print("Function Call Inputs: ", function_call_inputs)
+            function_call_inputs = self._ToolFactory.llm_response_tools(response_tools, self._GoogleSheets)
 
-            second_inputs = inputs + response.output + function_call_inputs
+            second_inputs = agent["inputs"] + response.output + function_call_inputs
  
             function_call_response = self.client.responses.parse(
                 model=self.agent_model,
                 input=second_inputs,
-                tools=format_agent_tools,
+                tools=self.tools,
                 store=False,
             )
 

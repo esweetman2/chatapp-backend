@@ -56,9 +56,8 @@ async def send_chat( chatMessage: ChatMessageRequest, session: Session = Depends
             chat_id=chatMessage.chat_id, 
             query=chatMessage.message, 
             role=chatMessage.role, 
-            user_id=chatMessage.user_id
+            user_id=chatMessage.user_id,
             )
-        print("here")
         response = _AgentBuilderService.generate_response()
         if response:
             return response

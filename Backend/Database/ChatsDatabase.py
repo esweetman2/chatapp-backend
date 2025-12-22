@@ -4,7 +4,18 @@ from Backend.db import engine
 from typing import Optional
 # from Backend.Schemas.schemas import User
 # from Backend.Schemas.AgentSchema import Agent
+from fastapi import HTTPException
 from Backend.Models.ChatModel import ChatModel
+from pydantic import BaseModel
+from datetime import datetime
+
+class ChatRepsonse(BaseModel):
+    id: int
+    agent_id: int
+    title: str
+    created_date: datetime
+    summary: str
+    message_start_index: int
 
 class ChatsDatabase:
     def __init__(self, db: Session):
@@ -15,13 +26,15 @@ class ChatsDatabase:
         if id is None and user_id is None:
             all_chats = self.db.exec(select(ChatModel).order_by(ChatModel.created_date.desc())).all()
             return all_chats if all_chats else None
+        
         elif id is not None:
             chat = self.db.exec(select(ChatModel).where(ChatModel.id == id)).first()
-            print(f"User fetched: {chat}")
             return chat if chat else None
+        
         elif user_id is not None:
             chats = self.db.exec(select(ChatModel).where(ChatModel.user_id == user_id).order_by(ChatModel.created_date.desc())).all()
             return chats if chats else None
+        
         else:
             return None
     
@@ -32,3 +45,29 @@ class ChatsDatabase:
         self.db.commit()
         self.db.refresh(new_chat)
         return new_chat
+    
+    def update_chat(self, updates: ChatModel) -> ChatModel:
+        try:
+            
+            chat = self.db.get(ChatModel, updates.id)
+
+            if not chat:
+                raise HTTPException(status_code=404, detail="Chat not found")
+            # 2. Extract updates data, excluding the ID if it's present in the response model
+        #    and excluding any unset values if using a PATCH approach
+            del updates.messages
+            update_data = updates.model_dump(exclude_unset=True)
+
+
+            # 3. Update the existing chat object's attributes using a loop
+            for key, value in update_data.items():
+                setattr(chat, key, value)
+
+            self.db.add(chat)
+            self.db.commit()
+            self.db.refresh(chat)
+
+            return chat
+        except Exception as e:
+            print("DATABASE FAILED")
+            return HTTPException(status_code=500, detail=str(e))

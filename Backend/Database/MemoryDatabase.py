@@ -41,7 +41,6 @@ class MemoryDatabase:
             }
             results = self.db.exec(sql,params=params)
             res = results.fetchall()
-            print(res)
             return res
         except Exception as e:
             return str(e)

@@ -4,7 +4,7 @@ from typing import Optional, List
 from datetime import datetime, timezone
 
 
-# CREATE TABLE agent_tools (
+# CREATE TABLE agenttools (
 #     agent_id INT REFERENCES agents(id) ON DELETE CASCADE,
 #     tool_id INT REFERENCES tools(id) ON DELETE CASCADE,
 #     PRIMARY KEY (agent_id, tool_id)

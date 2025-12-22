@@ -10,6 +10,8 @@ class ChatModel(SQLModel, table=True):
     agent_id: int = Field(default=None)
     title: Optional[str] = None
     created_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    summary: Optional[str] = None
+    message_start_index:  Optional[int] = Field(default=0)
 
     # aiuser: Optional["AiUser"] = Relationship(back_populates="chats")
     # chat: List["ChatModel"] = Relationship(back_populates="chat")
