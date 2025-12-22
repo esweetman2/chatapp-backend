@@ -89,6 +89,7 @@ class AgentBuilderService:
     
     def _store_message(self, role: str, content: str):
         # _MessageDatabase = MessagesDatabase(self.db_session)
+        # print(self.agent_id, self.user_id,self.chat_id, role, content)
         add_message = self._MessagesDatabase.add_message(
             user_id=self.user_id,
             agent_id=self.agent_id,
@@ -96,26 +97,27 @@ class AgentBuilderService:
             message=content,
             role=role
         )
+        # print(add_message)
         return add_message
     
     def _agent_setup(self):
         try:
-
+            
             self._rolling_window_messages()
-
+            
             memories = self.memory_factory.get_memories(query=self.query, memory_table=self.memory_table, top_k=10)
             self.system_message = self.system_message + f"\nYou MUST use the context below to help give a more accurate response.\n{str(memories)}"
-
+            
             inputs = self.llm_input_factory.create_inputs_strategy(messages=self.messages, system_message=self.system_message, query=self.query, role=self.role)
-
+            
             inputs.insert(0, {"role": "system", "content": self.system_message})
-
+            
             context_check = self.context_window_factory.context_window_checker(
                 agent_model=self.agent_model, 
                 model_id=self.agent_model_id, 
                 messages=inputs
                 )
-            
+
             agent = {
                 "memories": memories,
                 "context_check": context_check, 
@@ -171,7 +173,7 @@ class AgentBuilderService:
     #     return response.output_text
     
     def _rolling_window_messages(self):
-        if len(self.messages) > 10:
+        if self.messages and len(self.messages) > 10:
             self.messages = self.messages[-10:]
             return
 
@@ -190,12 +192,15 @@ class AgentBuilderService:
             )
 
             response_tools = self._ToolFactory.llm_response_tool_selector(response.output)
+            
 
             if not response_tools:
                 self._store_message(role=self.role, content=self.query)
                 agent_response = self._store_message(role="assistant", content=response.output_text)
+                # print("Agent Rsponse: ", agent_response)
                 return agent_response
 
+            
             function_call_inputs = self._ToolFactory.llm_response_tools(response_tools, self._GoogleSheets)
 
             second_inputs = agent["inputs"] + response.output + function_call_inputs

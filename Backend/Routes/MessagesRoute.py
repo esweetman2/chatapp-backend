@@ -35,6 +35,7 @@ class ChatMessageRequest(BaseModel):
     role: str
     user_id: int
 
+
 @router.post("/messages", tags=["Messages"])
 async def add_message(chatMessage: ChatMessageRequest, session: Session = Depends(get_session)):
     print(chatMessage)

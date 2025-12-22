@@ -54,9 +54,10 @@ async def get_chat(id: Optional[int] = None, user_id: Optional[int] = None, sess
 @router.post("/chats", tags=["Chats"])
 async def add_chat(newChat: ChatModel, session: Session = Depends(get_session)):
     try:
+        # print(newChat)
         _ChatsDatabase = ChatsDatabase(session)
         new_chat = _ChatsDatabase.add_chat(user_id=newChat.user_id, agent_id=newChat.agent_id, title=newChat.title)
-        print(newChat)
+        # print(newChat)
         return new_chat
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
