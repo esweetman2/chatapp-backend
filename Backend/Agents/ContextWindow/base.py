@@ -27,9 +27,12 @@ class GetLLMModelDetails(LLMContextStrategy):
 class LLMModelTokens(LLMModelTokensUsage):
 
     def get_tokens_used(messages: list, agent_model: str):
-        encoding = tiktoken.encoding_for_model(agent_model)
-        token_ids = encoding.encode(json.dumps(messages))
-        return len(token_ids)
+        try:
+            encoding = tiktoken.encoding_for_model(agent_model)
+            token_ids = encoding.encode(json.dumps(messages))
+            return len(token_ids)
+        except:
+            return 0
 
 class ManageContextWindow(ContextStrategy):
 

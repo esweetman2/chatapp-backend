@@ -23,6 +23,7 @@ class AgentTools(AgentToolsStrategy):
         try:
             tools = []
             agent_tools = db.get_agent_tool(agent_id=agent_id)
+            print(agent_tools)
             for i in agent_tools:
                 tools.append(db.get_tools(tool_id=i.tool_id))
 

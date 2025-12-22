@@ -21,19 +21,29 @@ class ChatsDatabase:
     def __init__(self, db: Session):
         self.db = db
     
-    def get_chat(self, id: Optional[int] = None, user_id: Optional[int] = None):
+    def get_chat(self, id: Optional[int] = None, user_id: Optional[int] = None, agent_id: Optional[int] = None):
         """Fetch a model"""
+        # print(user_id, agent_id)
         if id is None and user_id is None:
+            # print("id is None and user_id is None")
             all_chats = self.db.exec(select(ChatModel).order_by(ChatModel.created_date.desc())).all()
             return all_chats if all_chats else None
         
         elif id is not None:
+            # print("id is not None")
             chat = self.db.exec(select(ChatModel).where(ChatModel.id == id)).first()
             return chat if chat else None
         
+        elif user_id is not None and agent_id is not None:
+            # print("user_id is not None and agent_id is not None")
+            chat = self.db.exec(select(ChatModel).where(ChatModel.user_id == user_id).where(ChatModel.agent_id == agent_id).order_by(ChatModel.created_date.desc())).all()
+            return chat if chat else None
+        
         elif user_id is not None:
-            chats = self.db.exec(select(ChatModel).where(ChatModel.user_id == user_id).order_by(ChatModel.created_date.desc())).all()
+            # print("user_id is not None:")
+            chats = self.db.exec(select(ChatModel).where(ChatModel.user_id == user_id).order_by(ChatModel.created_date.desc()).order_by(ChatModel.created_date.desc())).all()
             return chats if chats else None
+        
         
         else:
             return None

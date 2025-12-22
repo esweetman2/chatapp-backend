@@ -29,10 +29,10 @@ class ChatModel(BaseModel):
     message_start_index: Optional[int] = 0
 
 @router.get("/chats", tags=["Chats"])
-async def get_chat(id: Optional[int] = None, user_id: Optional[int] = None, session: Session = Depends(get_session)) -> ChatModel | list[ChatModel]:
+async def get_chat(id: Optional[int] = None, user_id: Optional[int] = None, agent_id: Optional[int] = None, session: Session = Depends(get_session)) -> ChatModel | list[ChatModel]:
     try:
         _ChatsDatabase = ChatsDatabase(session)
-        chat = _ChatsDatabase.get_chat(id, user_id)
+        chat = _ChatsDatabase.get_chat(id, user_id, agent_id)
         if chat or chat == []:
             return chat
         elif chat == None:
