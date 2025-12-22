@@ -25,8 +25,8 @@ class ChatModel(BaseModel):
     title: Optional[str] = None
     created_date: Optional[datetime] = None
     messages: Optional[list] = []   
-    summary: Optional[str]
-    message_start_index: Optional[int]
+    summary: Optional[str] = None
+    message_start_index: Optional[int] = 0
 
 @router.get("/chats", tags=["Chats"])
 async def get_chat(id: Optional[int] = None, user_id: Optional[int] = None, session: Session = Depends(get_session)) -> ChatModel | list[ChatModel]:
