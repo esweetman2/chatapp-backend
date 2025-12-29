@@ -32,12 +32,20 @@ async def get_agent(id: Optional[int] = None, session: Session = Depends(get_ses
         raise HTTPException(status_code=500, detail=str(e))
 
 
+class AgentRequest(BaseModel):
+    id: Optional[int] = None
+    agent_name: str
+    description: str
+    system_message: str
+    model: str
+    model_id: int
+    use_memory: bool
 
 @router.post("/agent", tags=["agent"])
-async def create_agent(agent_name: str, description: str, model: str, model_id: int, system_message:str, session: Session = Depends(get_session)):
+async def create_agent(newAgent: AgentRequest, session: Session = Depends(get_session)):
     try:
         _AgentDatabase = AgentDatabase(session)
-        agent = _AgentDatabase.add_agent(agent_name=agent_name, description=description, model=model, model_id=model_id, system_message=system_message)
+        agent = _AgentDatabase.add_agent(agent_name=newAgent.agent_name, description=newAgent.description, model=newAgent.model, model_id=newAgent.model_id, system_message=newAgent.system_message)
         return agent
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

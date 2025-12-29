@@ -13,17 +13,17 @@ class MessagesDatabase:
     def get_message(self, id: Optional[int] = None, chat_id: Optional[int] = None) -> Optional[ChatMessages]:
         """Fetch a model"""
         if id is None and chat_id is None:
-            all_messages = self.db.exec(select(ChatMessages)).all()
+            all_messages = self.db.exec(select(ChatMessages).order_by(ChatMessages.id.desc())).all()
             return all_messages if all_messages else None
         elif id is None and chat_id is not None:
-            message = self.db.exec(select(ChatMessages).where(ChatMessages.chat_id == chat_id)).all()
+            message = self.db.exec(select(ChatMessages).where(ChatMessages.chat_id == chat_id).order_by(ChatMessages.id.desc())).all()
             return message if message else None 
         elif id is not None:
             message = self.db.exec(select(ChatMessages).where(ChatMessages.id == id)).first()
             return message if message else None
         
         message = self.db.exec(select(ChatMessages).where(ChatMessages.id == id, ChatMessages.chat_id == chat_id)).first()
-        print(f"User fetched: {message}")
+        # print(f"User fetched: {message}")
         return message if message else None
     
     def add_message(self, user_id: int, agent_id: int, chat_id: int, message: str = None, role: str = None) -> ChatMessages:

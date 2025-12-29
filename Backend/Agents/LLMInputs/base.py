@@ -27,7 +27,7 @@ class LLMInputs(InputsStrategy):
         self.messages = messages
 
     def get_inputs(self, system_message: str, query: str, role: str):
-        print(self.messages)
+        # print(self.messages)
         inputs = [
             {
                 "role": "system", 
@@ -60,8 +60,8 @@ class SummaryInputs(InputsStrategy):
         system_message = inputs[0]
         summary_messages = inputs[index:threshold]
         new_index = inputs.index(inputs[index:threshold][-1])
-        print(inputs[new_index+1])
-        print("new index: ", new_index)
+        # print(inputs[new_index+1])
+        # print("new index: ", new_index)
         if index != 0:
             summary_messages.insert(0, system_message)
         # return {"summary_messages":summary_messages, "new_index": new_index}

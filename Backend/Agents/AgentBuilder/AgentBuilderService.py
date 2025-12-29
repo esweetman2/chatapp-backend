@@ -182,8 +182,7 @@ class AgentBuilderService:
         try:
             agent = self._agent_setup()
 
-
-            response = self.client.responses.parse(
+            response = self.client.responses.create(
                 model=self.agent_model,
                 input=agent["inputs"],
                 # tools=[{ "type": "web_search_preview" }],
@@ -193,14 +192,12 @@ class AgentBuilderService:
 
             response_tools = self._ToolFactory.llm_response_tool_selector(response.output)
             
-
             if not response_tools:
                 self._store_message(role=self.role, content=self.query)
                 agent_response = self._store_message(role="assistant", content=response.output_text)
                 # print("Agent Rsponse: ", agent_response)
                 return agent_response
-
-            
+         
             function_call_inputs = self._ToolFactory.llm_response_tools(response_tools, self._GoogleSheets)
 
             second_inputs = agent["inputs"] + response.output + function_call_inputs
@@ -208,9 +205,11 @@ class AgentBuilderService:
             function_call_response = self.client.responses.parse(
                 model=self.agent_model,
                 input=second_inputs,
+                # stream=True,
                 tools=self.tools,
                 store=False,
             )
+            
 
             self._store_message(role=self.role, content=self.query)
             agent_response = self._store_message(role="assistant", content=function_call_response.output_text)
@@ -219,6 +218,86 @@ class AgentBuilderService:
         except Exception as e:
             print("Error storing agent response: ", str(e))
             agent_response = None
+            # return "Failed response"
+        
+            return agent_response
+        
+    def generate_response_stream(self):
+        
+        try:
+            agent = self._agent_setup()
+
+            # print(agent)
+
+
+            response = self.client.responses.create(
+                model=self.agent_model,
+                input=agent["inputs"],
+                # tools=[{ "type": "web_search_preview" }],
+                stream=True,
+                tools=self.tools,
+                store=False,
+            )
+
+            agent_response = ""
+
+            final_tool_calls = {}
+            final_tool_output = None
+            for event in response:
+                # print(event.type)
+                if event.type == 'response.output_item.added':
+                    final_tool_calls[event.output_index] = event.item
+                elif event.type == 'response.function_call_arguments.delta':
+                    index = event.output_index
+                    if final_tool_calls[index]:
+                        final_tool_calls[index].arguments += event.delta
+                elif event.type == "response.completed":
+                    final_tool_output = event.response.output
+                elif event.type == "response.output_text.delta":
+                    agent_response += event.delta
+                    yield event.delta
+            # print(event.delta, end="", flush=True)
+
+
+            response_tools = self._ToolFactory.llm_response_tool_selector(final_tool_output)
+            # print("response_tools", response_tools)
+            # return "testing"
+
+            if not response_tools:
+                self._store_message(role=self.role, content=self.query)
+                agent_response = self._store_message(role="assistant", content=agent_response)
+                # print("Agent Rsponse: ", agent_response)
+                # return agent_response
+                # return
+            else:
+                function_call_inputs = self._ToolFactory.llm_response_tools(response_tools, self._GoogleSheets)
+
+                second_inputs = agent["inputs"] + final_tool_output + function_call_inputs
+    
+                function_call_response = self.client.responses.create(
+                    model=self.agent_model,
+                    input=second_inputs,
+                    stream=True,
+                    tools=self.tools,
+                    store=False,
+                )
+
+                for event in function_call_response:
+                    # print(event.type)
+                    if event.type == "response.output_text.delta":
+                        agent_response += event.delta
+                        yield event.delta
+                
+                
+
+                self._store_message(role=self.role, content=self.query)
+                agent_response = self._store_message(role="assistant", content=agent_response)
+
+                # return agent_response
+        except Exception as e:
+            print("Error storing agent response: ", str(e))
+            agent_response = None
+            # return "Failed response"
         
             return agent_response
     

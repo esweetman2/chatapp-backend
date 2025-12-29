@@ -6,6 +6,7 @@ from Backend.Schemas.AgentSchema import Agent
 from Backend.Database.MessagesDatabase import MessagesDatabase
 from Backend.Agents.AgentBuilder.AgentBuilderService import AgentBuilderService
 from pydantic import BaseModel
+from fastapi.responses import StreamingResponse
 
 
 router = APIRouter()
@@ -64,6 +65,27 @@ async def send_chat( chatMessage: ChatMessageRequest, session: Session = Depends
             return response
         else:
             raise HTTPException(status_code=404, detail= "No response from Messages.")
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
+@router.post("/messages/agent/stream", tags=["Messages"])
+async def send_chat( chatMessage: ChatMessageRequest, session: Session = Depends(get_session)):
+    try:
+        _AgentBuilderService = AgentBuilderService(
+            db_session=session, 
+            agent_id=chatMessage.agent_id, 
+            chat_id=chatMessage.chat_id, 
+            query=chatMessage.message, 
+            role=chatMessage.role, 
+            user_id=chatMessage.user_id,
+            )
+        return StreamingResponse(_AgentBuilderService.generate_response_stream(), media_type="text/event-stream")
+        # if response:
+        #     return response
+        # else:
+        #     raise HTTPException(status_code=404, detail= "No response from Messages.")
     except Exception as e:
         print(e)
         raise HTTPException(status_code=500, detail=str(e))

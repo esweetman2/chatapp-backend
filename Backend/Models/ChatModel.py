@@ -15,5 +15,5 @@ class ChatModel(SQLModel, table=True):
 
     # aiuser: Optional["AiUser"] = Relationship(back_populates="chats")
     # chat: List["ChatModel"] = Relationship(back_populates="chat")
-    messages: List["ChatMessages"] = Relationship(back_populates="chat")
+    messages: List["ChatMessages"] = Relationship(back_populates="chat",sa_relationship_kwargs={"order_by": "ChatMessages.id"})
     # memories: List["AgentMemory"] = Relationship(back_populates="agentmemory")
