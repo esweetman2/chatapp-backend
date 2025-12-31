@@ -111,6 +111,8 @@ class AgentBuilderService:
             inputs = self.llm_input_factory.create_inputs_strategy(messages=self.messages, system_message=self.system_message, query=self.query, role=self.role)
             
             inputs.insert(0, {"role": "system", "content": self.system_message})
+
+            # print(self.agent)
             
             context_check = self.context_window_factory.context_window_checker(
                 agent_model=self.agent_model, 
@@ -228,70 +230,78 @@ class AgentBuilderService:
             agent = self._agent_setup()
 
             # print(agent)
-
-
-            response = self.client.responses.create(
-                model=self.agent_model,
-                input=agent["inputs"],
-                # tools=[{ "type": "web_search_preview" }],
-                stream=True,
-                tools=self.tools,
-                store=False,
-            )
-
             agent_response = ""
+            count = 0
 
-            final_tool_calls = {}
-            final_tool_output = None
-            for event in response:
-                # print(event.type)
-                if event.type == 'response.output_item.added':
-                    final_tool_calls[event.output_index] = event.item
-                elif event.type == 'response.function_call_arguments.delta':
-                    index = event.output_index
-                    if final_tool_calls[index]:
-                        final_tool_calls[index].arguments += event.delta
-                elif event.type == "response.completed":
-                    final_tool_output = event.response.output
-                elif event.type == "response.output_text.delta":
-                    agent_response += event.delta
-                    yield event.delta
-            # print(event.delta, end="", flush=True)
-
-
-            response_tools = self._ToolFactory.llm_response_tool_selector(final_tool_output)
-            # print("response_tools", response_tools)
-            # return "testing"
-
-            if not response_tools:
-                self._store_message(role=self.role, content=self.query)
-                agent_response = self._store_message(role="assistant", content=agent_response)
-                # print("Agent Rsponse: ", agent_response)
-                # return agent_response
-                # return
-            else:
-                function_call_inputs = self._ToolFactory.llm_response_tools(response_tools, self._GoogleSheets)
-
-                second_inputs = agent["inputs"] + final_tool_output + function_call_inputs
-    
-                function_call_response = self.client.responses.create(
+            while True:
+                # print("Running Count: ", count)
+                if count == 5:
+                    raise RuntimeError("Exceeded max tool calls")
+                with  self.client.responses.create(
                     model=self.agent_model,
-                    input=second_inputs,
+                    input=agent["inputs"],
+                    # tools=[{ "type": "web_search_preview" }],
                     stream=True,
                     tools=self.tools,
                     store=False,
-                )
+                ) as response:
 
-                for event in function_call_response:
-                    # print(event.type)
-                    if event.type == "response.output_text.delta":
-                        agent_response += event.delta
-                        yield event.delta
-                
+
+                    final_tool_calls = {}
+                    final_tool_output = None
+                    for event in response:
+                        # print(event.type)
+                        if event.type == 'response.output_item.added':
+                            final_tool_calls[event.output_index] = event.item
+                        elif event.type == 'response.function_call_arguments.delta':
+                            index = event.output_index
+                            if final_tool_calls[index]:
+                                final_tool_calls[index].arguments += event.delta
+                        elif event.type == "response.completed":
+                            final_tool_output = event.response.output
+                        elif event.type == "response.output_text.delta":
+                            agent_response += event.delta
+                            yield event.delta
                 
 
-                self._store_message(role=self.role, content=self.query)
-                agent_response = self._store_message(role="assistant", content=agent_response)
+
+                    response_tools = self._ToolFactory.llm_response_tool_selector(final_tool_output)
+                    # print("response_tools", response_tools)
+                # return "testing"
+
+                    if not response_tools:
+                        break
+                        # print("HRERE 2")
+
+                        # self._store_message(role=self.role, content=self.query)
+                        # agent_response = self._store_message(role="assistant", content=agent_response)
+                    # print("Agent Rsponse: ", agent_response)
+                    # return agent_response
+                    # return
+                # else:
+                    function_call_inputs = self._ToolFactory.llm_response_tools(response_tools)
+
+                    agent["inputs"] = agent["inputs"] + final_tool_output + function_call_inputs
+        
+                    # function_call_response = self.client.responses.create(
+                    #     model=self.agent_model,
+                    #     input=second_inputs,
+                    #     stream=True,
+                    #     tools=self.tools,
+                    #     store=False,
+                    # )
+
+                    # for event in function_call_response:
+                    #     # print(event.type)
+                    #     if event.type == "response.output_text.delta":
+                    #         agent_response += event.delta
+                    #         yield event.delta
+                count += 1    
+                    
+            # print("HRERE 1")
+            self._store_message(role=self.role, content=self.query)
+            # print("here: \n", agent_response)
+            agent_response = self._store_message(role="assistant", content=agent_response)
 
                 # return agent_response
         except Exception as e:

@@ -1,5 +1,14 @@
 from abc import ABC, abstractmethod
 import json
+from Backend.Agents.Tools.GoogleSheets import GoogleSheets
+from Backend.Agents.Tools.ExtractWebsite import fetch_page_text
+import json
+
+
+tool_registry = {
+    "extract_html_from_website": fetch_page_text,
+    "read_google_sheet": GoogleSheets().read_google_sheet,
+}
 
 class ToolStrategy(ABC):
     @abstractmethod
@@ -52,22 +61,37 @@ class FormatAgentTools(FormatToolsStrategy):
 
         return formatted_tools
     
-    def format_tools_ai_tools_response(self, ai_tool_calls, GoogleSheet):
+    def format_tools_ai_tools_response(self, ai_tool_calls):
         input_list = []
         for tool in ai_tool_calls:
-            if tool.name == "read_google_sheet":
-                args = json.loads(tool.arguments)
-
-                google_sheet_data = GoogleSheet.read_google_sheet(google_sheet_name=args["google_sheet_name"], worksheet=args["worksheet"])
-
-                # 4. Provide function call results to the model
-                input_list.append({
+            tool_name = tool.name
+            tool_args = json.loads(tool.arguments)
+            if tool_name not in tool_registry:
+                raise ValueError(f"Unknown tool: {tool_name}")
+            
+            result = tool_registry[tool_name](**tool_args)
+            input_list.append({
                     "type": "function_call_output",
                     "call_id": tool.call_id,
                     "output": json.dumps({
-                    "read_google_sheet": google_sheet_data
+                    "read_google_sheet": result
                     })
                 })
+
+
+            # if tool.name == "read_google_sheet":
+            #     args = json.loads(tool.arguments)
+
+            #     google_sheet_data = GoogleSheet.read_google_sheet(google_sheet_name=args["google_sheet_name"], worksheet=args["worksheet"])
+
+            #     # 4. Provide function call results to the model
+            #     input_list.append({
+            #         "type": "function_call_output",
+            #         "call_id": tool.call_id,
+            #         "output": json.dumps({
+            #         "read_google_sheet": google_sheet_data
+            #         })
+            #     })
             # formatted_tools.append(_tool)
         return input_list
 
@@ -99,7 +123,7 @@ class ToolFactory:
     def llm_response_tool_selector(self, llm_response):
         return LLMResponseToolSelector(llm_response=llm_response).get_tools()
     
-    def llm_response_tools(self, llm_response_with_tools, GoogleSheet):
-        return FormatAgentTools().format_tools_ai_tools_response(llm_response_with_tools, GoogleSheet)
+    def llm_response_tools(self, llm_response_with_tools):
+        return FormatAgentTools().format_tools_ai_tools_response(llm_response_with_tools)
 
 

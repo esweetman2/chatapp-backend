@@ -45,6 +45,8 @@ class AgentDatabase:
         """Update an agent using a dictionary of fields."""
         try:
             agent = self.db.get(Agent, agent_id)
+
+            # print(agent)
             
             if not agent:
                 raise HTTPException(status_code=404, detail="Agent not found")
