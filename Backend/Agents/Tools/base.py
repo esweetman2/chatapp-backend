@@ -2,12 +2,15 @@ from abc import ABC, abstractmethod
 import json
 from Backend.Agents.Tools.GoogleSheets import GoogleSheets
 from Backend.Agents.Tools.ExtractWebsite import fetch_page_text
+from Backend.Agents.Tools.AccessData.TaskData import get_task, update_task
 import json
 
 
 tool_registry = {
     "extract_html_from_website": fetch_page_text,
     "read_google_sheet": GoogleSheets().read_google_sheet,
+    "get_task": get_task,
+    "update_task": update_task
 }
 
 class ToolStrategy(ABC):
@@ -32,7 +35,7 @@ class AgentTools(AgentToolsStrategy):
         try:
             tools = []
             agent_tools = db.get_agent_tool(agent_id=agent_id)
-            # print(agent_tools)
+            # print("agent_tools: ", agent_tools)
             for i in agent_tools:
                 tools.append(db.get_tools(tool_id=i.tool_id))
 
@@ -45,6 +48,7 @@ class AgentTools(AgentToolsStrategy):
 class FormatAgentTools(FormatToolsStrategy):
     def format_tools(self, tools):
         formatted_tools = []
+        # print("Tools: ", tools)
         for tool in tools:
             _tool = {
                 "type": tool.tool_type,
@@ -52,29 +56,32 @@ class FormatAgentTools(FormatToolsStrategy):
                 "description": tool.description,
                 "parameters": tool.parameters
             }
-            if tool.tool_type == "web_search_preview":
+            if "web_search" in tool.tool_type:
                 del _tool['name']
                 del _tool['description']
                 del _tool['parameters']
 
             formatted_tools.append(_tool)
-
+        # print(formatted_tools)
         return formatted_tools
     
     def format_tools_ai_tools_response(self, ai_tool_calls):
         input_list = []
+        # print(ai_tool_calls)
         for tool in ai_tool_calls:
             tool_name = tool.name
             tool_args = json.loads(tool.arguments)
             if tool_name not in tool_registry:
                 raise ValueError(f"Unknown tool: {tool_name}")
-            
+            print(tool_registry[tool_name])
+            print(tool_args)
             result = tool_registry[tool_name](**tool_args)
+            print("result: ", result)
             input_list.append({
                     "type": "function_call_output",
                     "call_id": tool.call_id,
                     "output": json.dumps({
-                    "read_google_sheet": result
+                    tool_name: result
                     })
                 })
 
