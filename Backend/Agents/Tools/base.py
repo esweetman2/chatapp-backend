@@ -2,15 +2,15 @@ from abc import ABC, abstractmethod
 import json
 from Backend.Agents.Tools.GoogleSheets import GoogleSheets
 from Backend.Agents.Tools.ExtractWebsite import fetch_page_text
-from Backend.Agents.Tools.AccessData.TaskData import get_task, update_task
+# from Backend.Agents.Tools.AccessData.TaskData import get_task, update_task
 import json
 
 
 tool_registry = {
     "extract_html_from_website": fetch_page_text,
     "read_google_sheet": GoogleSheets().read_google_sheet,
-    "get_task": get_task,
-    "update_task": update_task
+    # "get_task": get_task,
+    # "update_task": update_task
 }
 
 class ToolStrategy(ABC):
