@@ -23,7 +23,6 @@ async def get_agent(id: Optional[int] = None, session: Session = Depends(get_ses
     try:
         _AgentDatabase = AgentDatabase(session)
         agent = _AgentDatabase.get_agent(id)
-        print(agent)
         if agent or agent == []:
             return agent
         else:
