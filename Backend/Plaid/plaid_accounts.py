@@ -34,17 +34,24 @@ class PlaidAccounts:
         #         print(accounts[i]["institution_name"])
         #     print("\n\n")
         # return accounts
+        # with open("Testing\\ProductionScripts.py\\accounts_json_with_investments.json", 'w') as json_file:
+        #     json.dump(accounts, json_file, indent=4)
+
         result = []
         institution_name = accounts["item"]["institution_name"]
         accounts_list = accounts["accounts"]
         for i in accounts_list:
+
+            official_name = i["official_name"] if i["official_name"] else ""
 
             temp = PlaidAccountModel(
                 user_id=int(user_id),
                 account_id=i["account_id"],
                 balances=i["balances"]["current"],
                 name=i["name"],
-                official_name=i["official_name"],
+                official_name=official_name,
+                type=i["type"],
+                subtype=i["subtype"],
                 institution_name=institution_name
             )
 

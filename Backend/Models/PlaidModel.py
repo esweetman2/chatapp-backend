@@ -1,6 +1,6 @@
 from sqlmodel import SQLModel, Field, Relationship, Session, text
 from typing import Optional, List
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 from Backend.db import engine
 import time
 
@@ -32,5 +32,25 @@ class PlaidAccountModel(SQLModel, table=True):
     name: str
     official_name: str
     institution_name: str
+    type: str
+    subtype: str
+    created_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class PlaidTransactionsModel(SQLModel, table=True):
+    __tablename__ = "plaidtransactions"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(unique=True)
+    account_id: str = Field(unique=True)
+    amount: float
+    authorized_date: date
+    category: str
+    counterparty:str
+    counterparty_type: str
+    counterparty_id: str
+    date: date
+    pending: bool
+    transaction_id: str
     created_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

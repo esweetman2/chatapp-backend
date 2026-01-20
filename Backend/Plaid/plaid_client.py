@@ -33,4 +33,4 @@ def get_plaid_client():
     )
     api_client = ApiClient(configuration)
     return plaid_api.PlaidApi(api_client)
-get_plaid_client()
+# get_plaid_client()

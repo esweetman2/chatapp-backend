@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from sqlmodel import  Session
 from Backend.db import  get_session
 import os
+import json
 
 from plaid.model.link_token_create_request import LinkTokenCreateRequest
 from plaid.model.link_token_create_request_user import LinkTokenCreateRequestUser
@@ -17,6 +18,7 @@ from plaid.model.item_public_token_exchange_request import ItemPublicTokenExchan
 
 from Backend.Plaid.plaid_client import get_plaid_client
 from Backend.Plaid.plaid_accounts import PlaidAccounts
+from Backend.Plaid.plaid_transactions import PlaidTransactions
 
 router = APIRouter()
 plaid_client = get_plaid_client()
@@ -37,7 +39,7 @@ def create_link_token(req: CreateLinkTokenRequest):
         request = LinkTokenCreateRequest(
             user=LinkTokenCreateRequestUser(client_user_id=req.user_id),
             client_name="My App",
-            products=[Products("transactions")],  # adjust to your needs
+            products=[Products("transactions"), Products("investments")],  # adjust to your needs
             country_codes=[CountryCode("US")],
             language="en",
             # redirect_uri=os.getenv("PLAID_REDIRECT_URI"),  # optional depending on institution/OAuth
@@ -107,10 +109,31 @@ def get_accounts(user_id: str, session: Session = Depends(get_session)):
     added_accounts = _PlaidDatabase.add_plaid_accounts(accounts=accounts)
     return added_accounts
 
-# @router.get("/plaid/transactions", tags=["Plaid"])
-# def get_transactions(user_id: str):
-#     # TODO: load access_token from DB using user_id
+@router.get("/plaid/load_transactions/plaidapi", tags=["Plaid"])
+def get_transactions(user_id: int, session: Session = Depends(get_session)):
+    # TODO: load access_token from DB using user_id
+    _PlaidDatabase = PlaidDatabase(session)
+    plaid_items = _PlaidDatabase.get_access_token(user_id)
+    if not plaid_items:
+        return []
+    
+    access_tokens = []
 
-#     request = TransactionsSyncRequest(access_token=access_token)
-#     resp = plaid_client.transactions_sync(request)
-#     return resp.to_dict()
+    for i in plaid_items:
+        access_tokens.append(i.access_token)
+    
+    _PlaidTransactions = PlaidTransactions()
+    transactions = _PlaidTransactions.get_transactions(access_tokens=access_tokens, user_id=user_id)
+    # return transactions
+    _PlaidDatabase = PlaidDatabase(session)
+    added_transactions = _PlaidDatabase.store_transactions( transactions=transactions)
+
+    return added_transactions
+
+    # request = TransactionsSyncRequest(access_token=access_tokens[0])
+    # resp = plaid_client.transactions_sync(request)
+    # res_dict = resp.to_dict()
+
+    # with open("Testing\\ProductionScripts.py\\transactions_json.json", 'w') as json_file:
+    #     json.dump(res_dict, json_file, indent=4)
+    # return resp.to_dict()
