@@ -43,6 +43,7 @@ def create_link_token(req: CreateLinkTokenRequest):
             optional_products=[Products("investments")],
             country_codes=[CountryCode("US")],
             language="en",
+            enable_multi_item_link=True 
             # redirect_uri=os.getenv("PLAID_REDIRECT_URI"),  # optional depending on institution/OAuth
             # webhook="https://your-api.com/plaid/webhook",  # optional but recommended
         )
