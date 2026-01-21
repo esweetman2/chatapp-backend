@@ -39,7 +39,7 @@ def create_link_token(req: CreateLinkTokenRequest):
         request = LinkTokenCreateRequest(
             user=LinkTokenCreateRequestUser(client_user_id=req.user_id),
             client_name="My App",
-            products=[Products("transactions"), Products("investments")],  # adjust to your needs
+            products=[Products("transactions")],  # adjust to your needs
             country_codes=[CountryCode("US")],
             language="en",
             # redirect_uri=os.getenv("PLAID_REDIRECT_URI"),  # optional depending on institution/OAuth
