@@ -34,21 +34,24 @@ class PublicTokenExchangeRequest(BaseModel):
 
 @router.post("/plaid/create_link_token", tags=["Plaid"])
 def create_link_token(req: CreateLinkTokenRequest):
-    print(req)
+    # print(req)
     try:
         request = LinkTokenCreateRequest(
             user=LinkTokenCreateRequestUser(client_user_id=req.user_id),
-            client_name="My App",
+            # user_id=req.user_id,
+            client_name="Personal Finance App",
             products=[Products("transactions")],  # adjust to your needs
             optional_products=[Products("investments")],
             country_codes=[CountryCode("US")],
             language="en",
-            enable_multi_item_link=True 
+            # enable_multi_item_link=True
             # redirect_uri=os.getenv("PLAID_REDIRECT_URI"),  # optional depending on institution/OAuth
             # webhook="https://your-api.com/plaid/webhook",  # optional but recommended
         )
+        print("request: ", request)
 
         response = plaid_client.link_token_create(request)
+        print("response: ", response)
 
         return {"link_token": response["link_token"]}
     except Exception as e:
