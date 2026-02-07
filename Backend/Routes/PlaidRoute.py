@@ -6,6 +6,7 @@ import os
 import json
 
 from plaid.model.link_token_create_request import LinkTokenCreateRequest
+from plaid.model.link_token_transactions import LinkTokenTransactions
 from plaid.model.link_token_create_request_user import LinkTokenCreateRequestUser
 from plaid.model.products import Products
 from plaid.model.country_code import CountryCode
@@ -44,6 +45,10 @@ def create_link_token(req: CreateLinkTokenRequest):
             optional_products=[Products("investments")],
             country_codes=[CountryCode("US")],
             language="en",
+            transactions=LinkTokenTransactions(
+                days_requested=730
+            ),
+            
             # enable_multi_item_link=True
             # redirect_uri=os.getenv("PLAID_REDIRECT_URI"),  # optional depending on institution/OAuth
             # webhook="https://your-api.com/plaid/webhook",  # optional but recommended
