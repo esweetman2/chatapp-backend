@@ -11,6 +11,7 @@ from openai import OpenAI
 from pydantic import BaseModel, Field
 import os
 from typing import Literal, List
+import traceback
 from dotenv import load_dotenv
 from Backend.db import engine
 from sqlmodel import Session
@@ -131,10 +132,9 @@ class AgentBuilderService:
             
             return agent
         except Exception as e:
-            print("Error storing agent response: ", str(e))
-            agent_response = None
-        
-            return agent_response
+            print("FULL ERROR:")
+            traceback.print_exc()
+            return None
 
     # def agent_orchestrator(self, agent_setup, summary, inputs):
     #     agent_setup["context_check"] = True
