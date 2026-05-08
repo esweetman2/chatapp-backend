@@ -40,6 +40,7 @@ class ManageContextWindow(ContextStrategy):
     def manage_context_window( llm_model_details: dict, total_tokens: int):
 
         print("llm_model_details: ", llm_model_details)
+        raise ValueError(f"manage context error {llm_model_details}")
         output_tokens = llm_model_details.output_tokens
         context_window = llm_model_details.context_window
 
