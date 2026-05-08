@@ -226,7 +226,7 @@ class AgentBuilderService:
 
             return agent_response
         except Exception as e:
-            print("Error storing agent response: ", str(e))
+            print("Error storing agent response 2: ", str(e))
             agent_response = None
             # return "Failed response"
             print("FULL ERROR generate response:")
@@ -315,11 +315,12 @@ class AgentBuilderService:
 
                 # return agent_response
         except Exception as e:
-            print("Error storing agent response: ", str(e))
+            print("Error storing agent response 3: ", str(e))
             agent_response = None
             # return "Failed response"
             print("Stream Error:")
             traceback.print_exc()
+            yield traceback.print_exc() 
         
             return agent_response
     
