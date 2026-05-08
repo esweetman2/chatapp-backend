@@ -21,8 +21,8 @@ class GetLLMModelDetails(LLMContextStrategy):
         self.db = db
 
     def get_llm_model_details(self, model_id: int):
+        raise ValueError(f"get_llm_model_details {model_id}")
         llm_model_details = self.db.get_model(model_id)
-        raise ValueError(f"get_llm_model_details {llm_model_details}")
         print("llm_model_details: ", llm_model_details)
         return llm_model_details
 
