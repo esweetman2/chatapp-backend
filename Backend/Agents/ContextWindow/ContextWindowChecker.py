@@ -45,6 +45,7 @@ class ContextWindowChecker:
 
         total_tokens = self._get_tokens_used(messages=json.dumps(messages))
         llm_model_details = self._get_llm_agent_details()
+        print("llm_model_details: ", llm_model_details)
         output_tokens = llm_model_details.output_tokens
         context_window = llm_model_details.context_window
 
