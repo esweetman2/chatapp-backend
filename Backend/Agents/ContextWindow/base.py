@@ -21,9 +21,8 @@ class GetLLMModelDetails(LLMContextStrategy):
         self.db = db
 
     def get_llm_model_details(self, model_id: int):
-        raise ValueError(f"get_llm_model_details {model_id}")
+
         llm_model_details = self.db.get_model(model_id)
-        print("llm_model_details: ", llm_model_details)
         return llm_model_details
 
 class LLMModelTokens(LLMModelTokensUsage):
@@ -39,9 +38,6 @@ class LLMModelTokens(LLMModelTokensUsage):
 class ManageContextWindow(ContextStrategy):
 
     def manage_context_window( llm_model_details: dict, total_tokens: int):
-
-        print("llm_model_details: ", llm_model_details)
-        raise ValueError(f"manage context error {llm_model_details}")
         output_tokens = llm_model_details.output_tokens
         context_window = llm_model_details.context_window
 
@@ -60,9 +56,6 @@ class ContextWindowFactory:
     def context_window_checker(self, model_id:int, messages: list, agent_model: str):
 
         llm_details = GetLLMModelDetails(db=self.db).get_llm_model_details(model_id=model_id)
-        print("llm_details: ", llm_details)
-
         total_tokens = LLMModelTokens.get_tokens_used(messages=messages, agent_model=agent_model)
-
         context_window_check = ManageContextWindow.manage_context_window(llm_model_details=llm_details, total_tokens=total_tokens)
         return context_window_check

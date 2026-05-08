@@ -103,20 +103,14 @@ class AgentBuilderService:
     
     def _agent_setup(self):
         try:
-            print("Step 1")
             
             self._rolling_window_messages()
-            print("Step 2")
             
             memories = self.memory_factory.get_memories(query=self.query, memory_table=self.memory_table, top_k=10)
-            print("Step 3")
             self.system_message = self.system_message + f"\nYou MUST use the context below to help give a more accurate response.\n{str(memories)}"
-            print("Step 4")
             
             inputs = self.llm_input_factory.create_inputs_strategy(messages=self.messages, system_message=self.system_message, query=self.query, role=self.role)
-            print("Step 5")
             inputs.insert(0, {"role": "system", "content": self.system_message})
-            print("Step 6")
 
             # print(self.agent)
             
@@ -126,7 +120,6 @@ class AgentBuilderService:
                 model_id=self.agent_model_id, 
                 messages=inputs
                 )
-            print("Step 7")
             
             agent = {
                 "memories": memories,
@@ -136,7 +129,6 @@ class AgentBuilderService:
                 "system_message": self.system_message,
                 "query": self.query,
             }
-            print("Step 8")
             
             return agent
         except Exception as e:
@@ -226,7 +218,6 @@ class AgentBuilderService:
 
             return agent_response
         except Exception as e:
-            print("Error storing agent response 2: ", str(e))
             agent_response = None
             # return "Failed response"
             print("FULL ERROR generate response:")
@@ -315,12 +306,10 @@ class AgentBuilderService:
 
                 # return agent_response
         except Exception as e:
-            print("Error storing agent response 3: ", str(e))
             agent_response = None
             # return "Failed response"
             print("Stream Error:")
             traceback.print_exc()
-            yield traceback.print_exc() 
         
             return agent_response
     
