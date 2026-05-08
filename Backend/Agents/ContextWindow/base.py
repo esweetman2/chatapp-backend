@@ -22,6 +22,7 @@ class GetLLMModelDetails(LLMContextStrategy):
 
     def get_llm_model_details(self, model_id: int):
         llm_model_details = self.db.get_model(model_id)
+        print("llm_model_details: ", llm_model_details)
         return llm_model_details
 
 class LLMModelTokens(LLMModelTokensUsage):
@@ -40,6 +41,7 @@ class ManageContextWindow(ContextStrategy):
         output_tokens = llm_model_details.output_tokens
         context_window = llm_model_details.context_window
 
+
         threshold = context_window - output_tokens
 
         if total_tokens > threshold:
@@ -54,6 +56,7 @@ class ContextWindowFactory:
     def context_window_checker(self, model_id:int, messages: list, agent_model: str):
 
         llm_details = GetLLMModelDetails(db=self.db).get_llm_model_details(model_id=model_id)
+        print("llm_details: ", llm_details)
 
         total_tokens = LLMModelTokens.get_tokens_used(messages=messages, agent_model=agent_model)
 
