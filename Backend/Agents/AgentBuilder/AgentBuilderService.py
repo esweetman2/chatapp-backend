@@ -229,6 +229,8 @@ class AgentBuilderService:
             print("Error storing agent response: ", str(e))
             agent_response = None
             # return "Failed response"
+            print("FULL ERROR generate response:")
+            traceback.print_exc()
         
             return agent_response
         
@@ -316,6 +318,8 @@ class AgentBuilderService:
             print("Error storing agent response: ", str(e))
             agent_response = None
             # return "Failed response"
+            print("Stream Error:")
+            traceback.print_exc()
         
             return agent_response
     
