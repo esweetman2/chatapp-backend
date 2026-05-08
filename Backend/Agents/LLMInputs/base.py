@@ -27,7 +27,7 @@ class LLMInputs(InputsStrategy):
         self.messages = messages
 
     def get_inputs(self, system_message: str, query: str, role: str):
-        # print(self.messages)
+        print("self.messages: ", self.messages)
         inputs = [
             {
                 "role": "system", 
