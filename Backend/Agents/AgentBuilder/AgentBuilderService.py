@@ -103,24 +103,31 @@ class AgentBuilderService:
     
     def _agent_setup(self):
         try:
+            print("Step 1")
             
             self._rolling_window_messages()
+            print("Step 2")
             
             memories = self.memory_factory.get_memories(query=self.query, memory_table=self.memory_table, top_k=10)
+            print("Step 3")
             self.system_message = self.system_message + f"\nYou MUST use the context below to help give a more accurate response.\n{str(memories)}"
+            print("Step 4")
             
             inputs = self.llm_input_factory.create_inputs_strategy(messages=self.messages, system_message=self.system_message, query=self.query, role=self.role)
-            
+            print("Step 5")
             inputs.insert(0, {"role": "system", "content": self.system_message})
+            print("Step 6")
 
             # print(self.agent)
+            
             
             context_check = self.context_window_factory.context_window_checker(
                 agent_model=self.agent_model, 
                 model_id=self.agent_model_id, 
                 messages=inputs
                 )
-
+            print("Step 7")
+            
             agent = {
                 "memories": memories,
                 "context_check": context_check, 
@@ -129,6 +136,7 @@ class AgentBuilderService:
                 "system_message": self.system_message,
                 "query": self.query,
             }
+            print("Step 8")
             
             return agent
         except Exception as e:
