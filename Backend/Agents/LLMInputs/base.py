@@ -75,6 +75,7 @@ class LLMInputsFactory:
         # message_history = MessagesHistory().get_inputs(messages = messages)
 
         inputs = LLMInputs(messages=messages).get_inputs(system_message=system_message, query=query, role=role)
+        print(inputs)
         
         return inputs
     
